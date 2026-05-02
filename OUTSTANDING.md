@@ -14,11 +14,17 @@ The plan requires Superpowers for the Refine, Plan, and Build phases (`brainstor
 
 After install, verify `/superpowers:brainstorm` appears in `/help`.
 
-### 2. prior-art-survey skill — NOT installed
+### 2. prior-art-survey skill set — partially installed
 
-The plan states this was "delivered to the user separately." It was not found at `~/.claude/skills/prior-art-survey/SKILL.md`.
+Installed so far:
+- ✅ `prior-art-oss-scout` — installed at `~/.claude/skills/prior-art-oss-scout/SKILL.md`
 
-**Action required:** Install the `prior-art-survey` skill (with its three scout subagents) before running Phase 4 verification step 5.
+Still needed (paste each when ready):
+- ❌ `prior-art-library-scout` — investigates libraries/SDKs (sonnet)
+- ❌ `prior-art-patterns-scout` — investigates architectural patterns (sonnet)
+- ❌ `prior-art-survey` — main orchestrator skill that dispatches all three scouts in parallel (opus)
+
+**Action required:** Provide the remaining three skill definitions and they will be installed immediately.
 
 ### 3. Codex CLI authentication — requires user action
 
@@ -40,4 +46,4 @@ Steps that can run now (no Superpowers needed):
 Steps blocked on prerequisites:
 - Step 3: `/office-hours` — requires Superpowers
 - Step 4: `/superpowers:brainstorm` — requires Superpowers
-- Step 5: `prior-art-survey` — skill missing
+- Step 5: `prior-art-survey` — oss-scout installed; library-scout, patterns-scout, and main orchestrator still needed
