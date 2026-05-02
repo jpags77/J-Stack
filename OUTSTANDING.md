@@ -14,19 +14,7 @@ The plan requires Superpowers for the Refine, Plan, and Build phases (`brainstor
 
 After install, verify `/superpowers:brainstorm` appears in `/help`.
 
-### 2. prior-art-survey skill set — partially installed
-
-Installed so far:
-- ✅ `prior-art-oss-scout` — installed at `~/.claude/skills/prior-art-oss-scout/SKILL.md`
-
-Still needed (paste each when ready):
-- ✅ `prior-art-library-scout` — installed at `~/.claude/skills/prior-art-library-scout/SKILL.md`
-- ✅ `prior-art-patterns-scout` — installed at `~/.claude/skills/prior-art-patterns-scout/SKILL.md`
-- ❌ `prior-art-survey` — main orchestrator skill that dispatches all three scouts in parallel (opus)
-
-**Action required:** Provide the remaining three skill definitions and they will be installed immediately.
-
-### 3. Codex CLI authentication — requires user action
+### 2. Codex CLI authentication — requires user action
 
 Codex CLI is installed (`codex-cli 0.128.0`) but has not been authenticated. On first `codex` invocation, authenticate via:
 - **ChatGPT OAuth** (requires Plus/Pro/Business/Edu/Enterprise plan), or
@@ -34,16 +22,45 @@ Codex CLI is installed (`codex-cli 0.128.0`) but has not been authenticated. On 
 
 The `second-opinion` skill depends on authenticated Codex CLI.
 
+## Installed skills — complete inventory
+
+### gstack (11 skills)
+| Skill | Model | Phase |
+|---|---|---|
+| office-hours | opus | Expand |
+| plan-ceo-review | opus | Expand |
+| cso | opus | Polish |
+| qa | sonnet | Polish |
+| design-shotgun | sonnet | Build |
+| design-html | sonnet | Build |
+| design-review | sonnet | Polish |
+| codex | sonnet | Defend |
+| document-release | sonnet | Handoff |
+| freeze | haiku | Safety |
+| guard | haiku | Safety |
+
+### Custom skills (8 skills)
+| Skill | Model | Phase |
+|---|---|---|
+| prior-art-survey | opus | Survey |
+| second-opinion | opus | Defend |
+| stakeholder-pack | opus | Defend |
+| prior-art-oss-scout | sonnet | Survey (subagent) |
+| prior-art-library-scout | sonnet | Survey (subagent) |
+| prior-art-patterns-scout | sonnet | Survey (subagent) |
+| poc-wiki-init | haiku | Setup |
+| handoff-snapshot | haiku | Cross-tool |
+
 ## Phase 4 verification status
 
-Steps that can run now (no Superpowers needed):
+Steps that can run now:
 - Step 2: `poc-wiki-init` ✓
+- Step 5: `prior-art-survey` ✓ (all four pieces installed)
 - Step 6: `/cso` on a stub file ✓
 - Step 7: `second-opinion` (requires Codex auth first)
 - Step 8: `stakeholder-pack` ✓
 - Step 9: `handoff-snapshot` ✓
 
-Steps blocked on prerequisites:
-- Step 3: `/office-hours` — requires Superpowers
-- Step 4: `/superpowers:brainstorm` — requires Superpowers
-- Step 5: `prior-art-survey` — oss-scout installed; library-scout, patterns-scout, and main orchestrator still needed
+Steps blocked on Superpowers:
+- Step 3: `/office-hours`
+- Step 4: `/superpowers:brainstorm`
