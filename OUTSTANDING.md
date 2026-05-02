@@ -1,0 +1,43 @@
+# Outstanding Items
+
+## Blockers requiring user action
+
+### 1. Superpowers plugin — NOT installed
+
+The plan requires Superpowers for the Refine, Plan, and Build phases (`brainstorming`, `writing-plans`, `subagent-driven-development`).
+
+**Install via Claude Code interactive session:**
+```
+/plugin marketplace add obra/superpowers-marketplace
+/plugin install superpowers@superpowers-marketplace
+```
+
+After install, verify `/superpowers:brainstorm` appears in `/help`.
+
+### 2. prior-art-survey skill — NOT installed
+
+The plan states this was "delivered to the user separately." It was not found at `~/.claude/skills/prior-art-survey/SKILL.md`.
+
+**Action required:** Install the `prior-art-survey` skill (with its three scout subagents) before running Phase 4 verification step 5.
+
+### 3. Codex CLI authentication — requires user action
+
+Codex CLI is installed (`codex-cli 0.128.0`) but has not been authenticated. On first `codex` invocation, authenticate via:
+- **ChatGPT OAuth** (requires Plus/Pro/Business/Edu/Enterprise plan), or
+- **API key:** `export OPENAI_API_KEY="sk-..."`
+
+The `second-opinion` skill depends on authenticated Codex CLI.
+
+## Phase 4 verification status
+
+Steps that can run now (no Superpowers needed):
+- Step 2: `poc-wiki-init` ✓
+- Step 6: `/cso` on a stub file ✓
+- Step 7: `second-opinion` (requires Codex auth first)
+- Step 8: `stakeholder-pack` ✓
+- Step 9: `handoff-snapshot` ✓
+
+Steps blocked on prerequisites:
+- Step 3: `/office-hours` — requires Superpowers
+- Step 4: `/superpowers:brainstorm` — requires Superpowers
+- Step 5: `prior-art-survey` — skill missing
