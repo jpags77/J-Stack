@@ -21,7 +21,7 @@ Installed so far:
 
 Still needed (paste each when ready):
 - ✅ `prior-art-library-scout` — installed at `~/.claude/skills/prior-art-library-scout/SKILL.md`
-- ❌ `prior-art-patterns-scout` — investigates architectural patterns (sonnet)
+- ✅ `prior-art-patterns-scout` — installed at `~/.claude/skills/prior-art-patterns-scout/SKILL.md`
 - ❌ `prior-art-survey` — main orchestrator skill that dispatches all three scouts in parallel (opus)
 
 **Action required:** Provide the remaining three skill definitions and they will be installed immediately.
