@@ -1,19 +1,31 @@
 # j-stack
 
-**[→ About j-stack (visual overview)](index.html)** · open `index.html` in a browser or enable GitHub Pages to serve it
+**[→ Visual overview](index.html)** · open in a browser or enable GitHub Pages
 
-A Claude Code stack optimized for enterprise PoC delivery.
-
-**Three goals:**
-1. Higher-fidelity demos in less time
-2. Defensive deliverables that preempt "did you try X" objections
-3. Cross-tool memory for resuming work in Codex / Cursor / ChatGPT when Anthropic usage limits hit
+A Claude Code configuration for agentic product development — from problem definition through a demo-ready, defensible deliverable.
 
 ---
 
-## Executive summary
+## Agentic Product Development
 
-### Why Superpowers changes everything
+Most teams use AI coding tools as sophisticated autocomplete. j-stack uses AI agents to run the *entire* product development lifecycle — from "are we solving the right problem?" through a security-reviewed, cross-vendor-validated, stakeholder-ready deliverable.
+
+The insight is simple: **AI agents are powerful but undisciplined.** Left unconstrained, they drift off-spec, reinvent existing solutions, skip tests, and produce code nobody can defend in a meeting. The value isn't the models — it's the process discipline imposed on them.
+
+j-stack encodes that discipline as skills that run automatically:
+
+- **Before a line of code is written** — the problem is reframed through a founder/10x lens, the approach is pressure-tested, prior art is researched across OSS/libraries/patterns, and a full implementation spec is locked and reviewed by the most capable model
+- **During build** — TDD enforces red-green-refactor, subagents work in isolated git worktrees against the locked spec, verification happens before anything is marked done
+- **After build** — QA audits against the spec, a Chief Security Officer agent runs OWASP/STRIDE analysis, and OpenAI Codex independently reviews Claude's output — convergent findings from two AI vendors are the strongest signal an enterprise stakeholder can get
+- **Throughout** — every decision is written to a persistent markdown wiki readable by every major AI tool, so hitting Anthropic usage limits mid-engagement is a clean handoff, not a loss
+
+The result: PoC artifacts that are spec-driven, TDD-built, security-reviewed, prior-art-researched, and cross-vendor-validated. Deliverables that answer stakeholder questions before they're asked. A process that runs the same way every time.
+
+---
+
+## What we've put together — and why
+
+### Superpowers — agentic coding discipline as a default
 
 If you know Claude Code, you know the failure modes: agents that drift off-spec as context fills, implementations that "look right" but weren't test-driven, parallel subagents that clobber each other's work, half-finished features marked done. Good engineers solve these with process discipline. **[Superpowers](https://github.com/obra/superpowers)** is that discipline, encoded as skills.
 
@@ -31,7 +43,11 @@ Each skill is the answer to a known agentic coding anti-pattern:
 
 Together these aren't features — they're **a baseline of agentic coding discipline** that most teams wing on every project. Superpowers makes them the default.
 
-**[gstack](https://github.com/garrytan/gstack)** is a community skill pack with 40+ tools. j-stack doesn't install it wholesale — that would conflict with Superpowers' planning lane and add adoption tax. Instead, 11 skills are cherry-picked for the gaps Superpowers doesn't cover: frontend scoping, UI work, security, QA, docs, and safety guardrails.
+---
+
+### gstack — specialized skills for the gaps Superpowers doesn't cover
+
+**[gstack](https://github.com/garrytan/gstack)** is a community skill pack with 40+ tools. j-stack doesn't install it wholesale — that would conflict with Superpowers' planning lane and add adoption tax. Instead, 11 skills are cherry-picked for specific gaps: frontend scoping, UI work, security, QA, docs, and safety guardrails.
 
 **Expand phase — Opus (judgment)**
 
@@ -59,13 +75,15 @@ Together these aren't features — they're **a baseline of agentic coding discip
 | `/freeze` | Locks specific files from editing. | Protects finalized artifacts (specs, stakeholder docs) from being modified mid-session. |
 | `/guard` | Combines `/freeze` with careful mode. | Adds a second layer when you need Claude to treat certain files as read-only under any circumstances. |
 
-**What was skipped and why:** gstack's `/autoplan` and `/plan-eng-review` overlap Superpowers' planning lane — two planners create conflicts. `/ship`, `/canary`, `/investigate`, and `/land-and-deploy` are prod-shipping tools; PoC mission doesn't need them. `/retro`, `/pair-agent`, and `gbrain` solve problems outside the PoC scope entirely.
+**What was skipped and why:** `/autoplan` and `/plan-eng-review` overlap Superpowers' planning lane — two planners create conflicts. `/ship`, `/canary`, `/investigate`, and `/land-and-deploy` are prod-shipping tools; PoC mission doesn't need them. `/retro`, `/pair-agent`, and `gbrain` solve problems outside the PoC scope entirely.
 
-### Prior-art research — a net new addition
+---
 
-Neither Superpowers nor gstack ships a prior-art research agent. This is an original addition to the stack, and it fills a real gap: AI agents are enthusiastic reinventors of wheels.
+### prior-art-survey — a net new addition
 
-`prior-art-survey` dispatches **three parallel scouts** before any implementation begins:
+Neither Superpowers nor gstack ships a prior-art research agent. This is an original addition to the stack, and it fills a real gap: **AI agents are enthusiastic reinventors of wheels.**
+
+`prior-art-survey` dispatches three parallel scouts before any implementation begins:
 
 | Scout | What it searches | Why it matters |
 |-------|-----------------|----------------|
@@ -75,19 +93,32 @@ Neither Superpowers nor gstack ships a prior-art research agent. This is an orig
 
 The output isn't just research — it becomes the "what else did you consider" section of the stakeholder pack, and it's the primary defense against the classic enterprise objection: *"did you look at X before building this?"*
 
+---
+
+### Four custom skills — what doesn't exist anywhere else
+
+| Skill | What it does |
+|-------|-------------|
+| `poc-wiki-init` | Bootstraps the `.planning/` wiki at project start. Generates schema files for Claude Code, Codex, Cursor, and ChatGPT. Idempotent — safe to run again. |
+| `handoff-snapshot` | Writes a timestamped snapshot to `.planning/handoffs/` with context, decisions, next steps, and a paste-ready continuation prompt for the next tool. |
+| `second-opinion` | Dispatches an artifact to Codex CLI for independent review, then synthesizes a convergence/divergence matrix. Two AI vendors reviewing the same artifact independently. |
+| `stakeholder-pack` | Aggregates vision, prior-art, security, and cross-model review outputs into a single executive-ready document. Pre-answers the five standard enterprise PoC questions. |
+
+---
+
 ### Token optimization and the second brain
 
 Anthropic is tightening usage limits, and burning Opus credits on mechanical work is a real cost. j-stack addresses this at two levels.
 
-**Model routing by cognitive demand** is the first defense. Every skill has an explicit model directive:
+**Model routing by cognitive demand** is the first defense. Every skill carries an explicit model directive injected at install time:
 
-- **Opus** — judgment calls only: scoping, security reasoning, cross-model synthesis, stakeholder framing
-- **Sonnet** — execution work: implementation, audits, UI conversion, code review
+- **Opus** — judgment calls: scoping, security reasoning, cross-model synthesis, stakeholder framing
+- **Sonnet** — execution: implementation, audits, UI conversion, code review
 - **Haiku** — mechanical operations: templating, summarizing, file locking
 
-The result: a full pipeline run spends Opus tokens where they move the needle and Haiku tokens on everything else.
+A full pipeline run spends Opus tokens where they move the needle and Haiku tokens on everything else.
 
-**The `.planning/` wiki is the second defense** — and the emergency bailout. This is the same concept Andrej Karpathy describes with his Obsidian second brain: a persistent, structured external memory that outlives any single session or tool. Every decision, artifact, and handoff is written to markdown files in `.planning/`. The wiki is readable by every major AI tool through its own schema file:
+**The `.planning/` wiki is the second defense** — and the emergency bailout. This is the same concept Andrej Karpathy describes with his Obsidian second brain: a persistent, structured external memory that outlives any single session or tool. Every decision, artifact, and handoff is written to markdown files in `.planning/`. The wiki speaks every tool's native language:
 
 | File | Read by |
 |------|---------|
@@ -96,37 +127,49 @@ The result: a full pipeline run spends Opus tokens where they move the needle an
 | `.planning/.cursor/rules` | Cursor |
 | `.planning/chatgpt-brief.md` | ChatGPT (paste-in) |
 
-When Anthropic limits hit mid-engagement — and they will — running `handoff-snapshot` writes a continuation prompt to `.planning/handoffs/`. Paste it into Codex, Cursor, or ChatGPT and the session resumes from exactly where it stopped. No context lost, no re-explanation, no starting over.
+When Anthropic limits hit mid-engagement — and they will — `handoff-snapshot` writes a continuation prompt to `.planning/handoffs/`. Paste it into Codex, Cursor, or ChatGPT and the session resumes from exactly where it stopped. No context lost, no re-explanation, no starting over.
 
-### What j-stack assembles
+---
 
-- **Superpowers** — agentic coding discipline (planning, TDD, worktrees, verification)
-- **11 cherry-picked gstack skills** — frontend scoping, UI work, security, QA, docs, safety rails
-- **prior-art-survey** — three parallel research scouts before any build begins
-- **4 custom skills** — wiki bootstrapping, cross-tool handoff, cross-vendor review, stakeholder defense pack
-- **Model routing** — explicit Opus/Sonnet/Haiku directives on every skill
-- **`.planning/` second brain** — persistent cross-tool memory with emergency bailout
+## How it works
 
-### Spec-driven development and TDD by default
-
-The pipeline enforces a plan-before-build discipline. Nothing in BUILD starts until PLAN is locked:
+### The pipeline
 
 ```
-EXPAND  → reframe the problem through a founder/10x lens
-REFINE  → pressure-test the approach with structured brainstorming
-SURVEY  → parallel prior-art research (OSS, libraries, architectural patterns)
-PLAN    → full implementation spec reviewed by Opus before any code runs
-BUILD   → TDD execution: tests first against the spec, then implementation
-POLISH  → QA, design audit, and OWASP security review against the spec
-DEFEND  → Codex CLI independently reviews Claude's work; findings synthesized
-HANDOFF → docs generated from diff; cross-tool snapshot written
+EXPAND → REFINE → SURVEY → PLAN → BUILD → POLISH → DEFEND → HANDOFF
 ```
 
-The `superpowers:test-driven-development` skill enforces red-green-refactor during BUILD. Subagents implement against the spec, not a vague prompt. The DEFEND phase runs Claude's output through OpenAI Codex independently — convergent findings from two vendors are the strongest signal an enterprise stakeholder can get.
+| Phase | Skills | What happens |
+|-------|--------|-------------|
+| **Expand** | `/office-hours`, `/plan-ceo-review` | Founder-lens reframe. Are we solving the right problem? What would a 10x founder cut? |
+| **Refine** | `brainstorm` (SP) | Structured pressure-testing of the approach. Locked before prior-art begins. |
+| **Survey** | `prior-art-survey` | Three parallel scouts: OSS, libraries, patterns. Answers "did you try X" before it's asked. |
+| **Plan** | `writing-plans` (SP) | Full implementation spec, Opus-reviewed. Nothing builds until this is locked. |
+| **Build** | `subagent-driven-dev` (SP), `/design-shotgun`, `/design-html` | TDD execution. Parallel subagents in isolated worktrees, implementing against the spec. |
+| **Polish** | `/qa`, `/design-review`, `/cso` | Audit against spec, design review, OWASP/STRIDE security analysis. |
+| **Defend** | `second-opinion`, `stakeholder-pack` | Codex independently reviews Claude's output. Findings synthesized. Stakeholder pack assembled. |
+| **Handoff** | `/document-release`, `handoff-snapshot` | Docs generated from diff. Wiki snapshot written for cross-tool resumption. |
 
-### The five questions j-stack pre-answers
+### SDLC coverage — the discovery-to-demo arc
 
-Enterprise stakeholders ask the same questions every time. j-stack produces artifacts that answer them before the meeting:
+j-stack covers the **discovery → demo arc** of the SDLC. What's deliberately out of scope is the production-ops side — deployment, monitoring, incident response — because PoC mission ≠ production mission.
+
+| SDLC Phase | j-stack Stage | Engineering PM Principle |
+|---|---|---|
+| Product Discovery | EXPAND | *Are we solving the right problem?* Reframe before engineering begins. |
+| Requirements & Ideation | REFINE | Structured pressure-testing before committing to an approach. |
+| Feasibility / Build-vs-Buy | SURVEY | Named, reasoned alternatives. Every "did you try X" answered before the meeting. |
+| Technical Design | PLAN | Spec locked before implementation. Explicit gate — nothing builds until this is done. |
+| Development | BUILD | TDD enforced, parallel subagents, spec-bound execution. |
+| QA & Security | POLISH | Definition of done against spec. Risk management as a deliverable. |
+| Stakeholder Review | DEFEND | Pre-answered objections, cross-vendor validation. |
+| Documentation & Handoff | HANDOFF | Docs from diff. Knowledge transfer built in, not bolted on. |
+
+**Out of scope by design:** Deployment / Release ops · Monitoring / Observability · Incident response / Maintenance *(PoC mission ≠ production)*
+
+### The five questions enterprise stakeholders always ask
+
+j-stack produces artifacts that answer these before the meeting:
 
 | Question | Artifact |
 |----------|----------|
@@ -136,57 +179,13 @@ Enterprise stakeholders ask the same questions every time. j-stack produces arti
 | Does it actually work? | `/qa` audit against spec + TDD test suite |
 | Why should I trust one AI vendor? | `second-opinion` cross-vendor convergence matrix |
 
-All five are assembled into a single document by `stakeholder-pack` before the demo.
+All five are assembled by `stakeholder-pack` into a single document before the demo. The meeting shifts from "defend the work" to "discuss what's next."
 
 ---
 
-## SDLC coverage — the discovery-to-demo arc
+## How to use it
 
-j-stack covers the **discovery → demo arc** of the software development lifecycle. Every phase from problem definition through stakeholder handoff is explicitly handled by a skill. What's deliberately out of scope is the production-ops side — deployment, monitoring, incident response — because PoC mission ≠ production mission.
-
-| SDLC Phase | j-stack Stage | Engineering PM Principle |
-|---|---|---|
-| Product Discovery | EXPAND | *Are we solving the right problem?* Founder/10x reframe before any engineering begins. |
-| Requirements & Ideation | REFINE | Structured pressure-testing before committing to an approach. |
-| Feasibility / Build-vs-Buy | SURVEY | Named, reasoned alternatives across OSS, libraries, and patterns. Every "did you try X" answered before the meeting. |
-| Technical Design | PLAN | Spec locked before implementation begins. Explicit gate — nothing builds until this is done. |
-| Development | BUILD | TDD (red-green-refactor enforced), parallel subagents, spec-bound execution. |
-| QA & Security | POLISH | Definition of done against spec. OWASP/STRIDE risk management as a deliverable, not a checkbox. |
-| Stakeholder Review | DEFEND | Pre-answered objections, cross-vendor AI validation. Meeting shifts from "defend the work" to "what's next." |
-| Documentation & Handoff | HANDOFF | Docs generated from diff, not written afterward. Knowledge transfer built in. |
-
-**Out of scope by design** (PoC mission ≠ production):
-
-| SDLC Phase | Why excluded |
-|---|---|
-| Deployment / Release ops | Prod-shipping discipline; out of PoC scope |
-| Monitoring / Observability | Post-launch ops |
-| Incident response / Maintenance | Beyond the demo arc |
-
-### Engineering PM principles baked in
-
-- **Discovery before engineering** — EXPAND and REFINE exist before a line of spec is written. `/office-hours` specifically asks "are you solving the right problem?"
-- **Build vs. buy at every dependency** — `prior-art-survey` runs three parallel scouts (OSS, libraries, patterns) and produces a named, reasoned landscape — not a gut call
-- **Explicit phase gates** — each stage must complete before the next begins; nothing in BUILD runs without a locked PLAN output
-- **Risk management as a deliverable** — `/cso` files an OWASP/STRIDE finding set; `second-opinion` adds a cross-vendor risk matrix; both are artifacts, not notes in a chat window
-- **Documentation built in, not bolted on** — `/document-release` generates docs from the diff; `handoff-snapshot` captures session state; there is no "go document what you built" sprint at the end
-- **Parallel workstreams** — `subagent-driven-development` and `prior-art-survey`'s three parallel scouts mirror how a PM schedules concurrent engineering tracks
-- **Stakeholder communication** — `stakeholder-pack` pre-answers the five standard enterprise questions and turns the demo from a defense into a discussion about next steps
-
----
-
-## What's in the stack
-
-| Layer | Tools | Phase |
-|-------|-------|-------|
-| **Superpowers** | brainstorming, writing-plans, subagent-driven-development | Core framework |
-| **gstack skills** (cherry-picked) | /office-hours, /plan-ceo-review, /qa, /design-shotgun, /design-html, /design-review, /cso, /codex, /document-release, /freeze, /guard | Scoping, polish, handoff |
-| **Custom skills** | poc-wiki-init, handoff-snapshot, second-opinion, stakeholder-pack | Wiki, cross-tool, defense |
-| **prior-art-survey** | Parallel OSS/library/patterns scouts | Survey (delivered separately) |
-
----
-
-## Prerequisites
+### Prerequisites
 
 - [Claude Code](https://claude.ai/code) installed (`which claude`)
 - [Superpowers plugin](https://github.com/obra/superpowers) installed in Claude Code
@@ -194,9 +193,7 @@ j-stack covers the **discovery → demo arc** of the software development lifecy
 - [OpenAI Codex CLI](https://github.com/openai/codex) installed and authenticated (for `second-opinion`)
 - git, bash, standard Unix tools
 
----
-
-## Installation
+### Installation
 
 ```bash
 git clone https://github.com/jpagano-r7/j-stack.git
@@ -204,103 +201,37 @@ cd j-stack
 bash install.sh
 ```
 
-**Options:**
-
 ```bash
 bash install.sh --skip-codex    # skip Codex CLI check (if not using second-opinion)
 bash install.sh --skip-verify   # skip post-install verification
 ```
 
-The script:
-1. Checks prerequisites
-2. Clones [gstack](https://github.com/garrytan/gstack) and copies 11 skills into `~/.claude/skills/`, injecting model directives
-3. Installs 4 custom skills into `~/.claude/skills/`
-4. Configures `CLAUDE.md` with skill lane ownership
+The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/` with model directives injected, installs the 4 custom skills, and writes the `CLAUDE.md` lane configuration.
 
----
-
-## Workflow pipeline
+### Starting a new PoC
 
 ```
-EXPAND → REFINE → SURVEY → PLAN → BUILD → POLISH → DEFEND → HANDOFF
+1. Open Claude Code in your project directory
+2. /poc-wiki-init             ← bootstrap .planning/ wiki
+3. /office-hours              ← founder-lens reframe
+4. /superpowers:brainstorm    ← pressure-test the vision
+5. prior-art-survey           ← parallel prior-art research
+6. writing-plans              ← lock the implementation spec
+7. subagent-driven-dev        ← build with TDD
+8. /qa + /cso                 ← polish and security review
+9. second-opinion             ← cross-vendor validation
+10. stakeholder-pack          ← assemble the deliverable
+11. /document-release         ← generate docs from diff
 ```
 
-| Phase | Skill | Purpose |
-|-------|-------|---------|
-| Expand | `/office-hours`, `/plan-ceo-review` | Founder-lens reframe, scope challenge |
-| Refine | `brainstorm` (Superpowers) | Idea pressure-testing |
-| Survey | `prior-art-survey` | Parallel OSS/library/patterns research |
-| Plan | `writing-plans` (Superpowers) | Implementation plan |
-| Build | `subagent-driven-development`, `/design-shotgun`, `/design-html` | Execution |
-| Polish | `/qa`, `/design-review`, `/cso` | Audit, design QA, security review |
-| Defend | `second-opinion`, `stakeholder-pack` | Cross-vendor review, stakeholder doc |
-| Handoff | `/document-release`, `handoff-snapshot` | Docs, cross-tool resumption |
-
----
-
-## Model routing
-
-Skills are assigned models based on cognitive demand:
-
-- **Opus** — judgment moments: scoping, security reasoning, cross-model synthesis, stakeholder framing
-- **Sonnet** — execution moments: implementation, audits, conversions
-- **Haiku** — housekeeping: templating, summarizing, mechanical operations
-
----
-
-## Cross-tool memory
-
-Each PoC project runs `poc-wiki-init` once to create a `.planning/` wiki directory. The wiki contains schema files for every major AI tool:
-
-| File | Consumed by |
-|------|-------------|
-| `.planning/CLAUDE.md` | Claude Code |
-| `.planning/AGENTS.md` | Codex CLI |
-| `.planning/.cursor/rules` | Cursor |
-| `.planning/chatgpt-brief.md` | ChatGPT (paste-in) |
-
-When Anthropic usage limits hit mid-engagement, run `handoff-snapshot` to write a continuation prompt, then paste it into the next tool.
-
----
-
-## Custom skills
-
-### `poc-wiki-init`
-Bootstraps `.planning/` wiki structure at project start. Idempotent — safe to run again.
-
-### `handoff-snapshot`
-Writes a timestamped snapshot to `.planning/handoffs/` with context, decisions, next steps, and a paste-ready continuation prompt.
-
-### `second-opinion`
-Dispatches an artifact to Codex CLI for independent review, then synthesizes a convergence/divergence matrix. Output filed to `.planning/reviews/`.
-
-### `stakeholder-pack`
-Aggregates vision, prior-art, security, and cross-model review outputs into a single executive-ready document. Pre-answers the five standard enterprise PoC questions.
-
----
-
-## What's NOT installed
+### What's NOT installed — and why
 
 These were considered and explicitly rejected:
 
 | Skipped | Reason |
 |---------|--------|
 | Full gstack install | Conflicts with Superpowers, adoption tax |
-| gstack /autoplan, /plan-eng-review | Overlap Superpowers' planning lane |
-| gstack /investigate, /ship, /canary | Prod-shipping discipline; out of PoC scope |
+| gstack `/autoplan`, `/plan-eng-review` | Overlap Superpowers' planning lane |
+| gstack `/investigate`, `/ship`, `/canary` | Prod-shipping discipline; out of PoC scope |
 | LiteLLM gateway | Proxy complexity not worth it for one OpenAI shell-out |
 | MCP-based memory | ~6K token tax per session; markdown wiki achieves the same goal |
-
----
-
-## Starting a new PoC
-
-```
-1. Open Claude Code in your project directory
-2. /poc-wiki-init          ← bootstrap .planning/ wiki
-3. /office-hours           ← founder-lens reframe
-4. /superpowers:brainstorm ← pressure-test the vision
-5. prior-art-survey        ← parallel prior-art research
-6. writing-plans           ← implementation plan
-7. ... build, polish, defend, handoff
-```
