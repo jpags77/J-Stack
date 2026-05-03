@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>j-stack · Claude Code for Enterprise PoC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080d19;
+    --surface: #0f1729;
+    --surface2: #162035;
+    --surface3: #1d2a45;
+    --border: rgba(99,102,241,0.15);
+    --border2: rgba(255,255,255,0.06);
+    --indigo: #6366f1;
+    --indigo-dim: rgba(99,102,241,0.10);
+    --indigo-glow: rgba(99,102,241,0.35);
+    --cyan: #22d3ee;
+    --cyan-dim: rgba(34,211,238,0.1);
+    --green: #34d399;
+    --green-dim: rgba(52,211,153,0.10);
+    --amber: #fbbf24;
+    --amber-dim: rgba(251,191,36,0.10);
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-dimmer: #475569;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --max-w: 1100px;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  #root { min-height: 100vh; }
+
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  @keyframes shimmer-border {
+    0% { opacity: 0.4; }
+    50% { opacity: 1; }
+    100% { opacity: 0.4; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ─── Shared primitives ────────────────────────────────────────────────────────
+
+function Mono({ children, style = {} }) {
+  return (
+    <span style={{ fontFamily: "'DM Mono', monospace", ...style }}>
+      {children}
+    </span>
+  );
+}
+
+function Label({ children, style = {} }) {
+  return (
+    <div style={{
+      fontSize: 11,
+      fontWeight: 600,
+      letterSpacing: '0.08em',
+      textTransform: 'uppercase',
+      color: 'var(--text-dimmer)',
+      ...style
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function Card({ children, style = {}, accent = false }) {
+  return (
+    <div style={{
+      background: 'var(--surface)',
+      border: `1px solid ${accent ? 'rgba(99,102,241,0.3)' : 'var(--border)'}`,
+      borderRadius: 'var(--radius)',
+      overflow: 'hidden',
+      ...style
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function SectionDivider({ label }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
+      <Label style={{ whiteSpace: 'nowrap' }}>{label}</Label>
+      <div style={{ flex: 1, height: 1, background: 'var(--border2)' }}></div>
+    </div>
+  );
+}
+
+// ─── Nav ─────────────────────────────────────────────────────────────────────
+
+function Nav() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  return (
+    <nav style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+      background: scrolled ? 'rgba(8,13,25,0.92)' : 'transparent',
+      backdropFilter: scrolled ? 'blur(12px)' : 'none',
+      borderBottom: scrolled ? '1px solid var(--border2)' : '1px solid transparent',
+      transition: 'all 0.3s ease',
+      padding: '0 40px',
+    }}>
+      <div style={{
+        maxWidth: 'var(--max-w)',
+        margin: '0 auto',
+        height: 56,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Mono style={{ fontSize: 18, fontWeight: 500, color: 'var(--indigo)' }}>j-stack</Mono>
+          <span style={{
+            fontSize: 10, fontWeight: 600, letterSpacing: '0.08em',
+            textTransform: 'uppercase', color: 'var(--text-dimmer)',
+            background: 'var(--surface2)',
+            border: '1px solid var(--border2)',
+            borderRadius: 4, padding: '2px 6px'
+          }}>v0.1</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+          {['why', 'sdlc', 'pipeline', 'stack', 'memory', 'install'].map(id => (
+            <a key={id} href={`#${id}`} style={{
+              fontSize: 13, color: 'var(--text-dim)',
+              textDecoration: 'none', transition: 'color 0.2s',
+              fontWeight: 400,
+            }}
+            onMouseEnter={e => e.target.style.color = 'var(--text)'}
+            onMouseLeave={e => e.target.style.color = 'var(--text-dim)'}
+            >
+              {id}
+            </a>
+          ))}
+          <a
+            href="https://github.com/jpagano-r7/j-stack"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              fontSize: 12, color: 'var(--text-dim)',
+              textDecoration: 'none',
+              background: 'var(--surface2)',
+              border: '1px solid var(--border2)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '6px 12px',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,0.4)'; e.currentTarget.style.color = 'var(--text)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.color = 'var(--text-dim)'; }}
+          >
+            <GitHubIcon size={14} /> GitHub
+          </a>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function GitHubIcon({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+    </svg>
+  );
+}
+
+// ─── Hero ─────────────────────────────────────────────────────────────────────
+
+function Hero() {
+  return (
+    <section style={{
+      paddingTop: 140,
+      paddingBottom: 80,
+      paddingLeft: 40,
+      paddingRight: 40,
+      maxWidth: 'var(--max-w)',
+      margin: '0 auto',
+      animation: 'fade-in-up 0.7s ease both',
+    }}>
+      {/* Eyebrow */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+        <span style={{
+          display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
+          background: 'var(--indigo)',
+          animation: 'pulse-dot 2s ease infinite',
+        }}></span>
+        <Label>Claude Code · Enterprise PoC Stack</Label>
+      </div>
+
+      {/* Headline */}
+      <h1 style={{
+        fontSize: 'clamp(52px, 8vw, 88px)',
+        fontWeight: 300,
+        letterSpacing: '-0.03em',
+        lineHeight: 1.0,
+        marginBottom: 20,
+        color: 'var(--text)',
+      }}>
+        <Mono style={{ fontSize: 'inherit', fontWeight: 500, color: 'var(--indigo)' }}>j-stack</Mono>
+      </h1>
+
+      {/* Subheadline */}
+      <p style={{
+        fontSize: 'clamp(16px, 2.5vw, 22px)',
+        color: 'var(--text-dim)',
+        fontWeight: 300,
+        maxWidth: 640,
+        marginBottom: 60,
+        lineHeight: 1.5,
+      }}>
+        A Claude Code stack optimized for enterprise PoC delivery.
+      </p>
+
+      {/* Three-column value props */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+        gap: 1,
+        background: 'var(--border2)',
+        border: '1px solid var(--border2)',
+        borderRadius: 'var(--radius)',
+        overflow: 'hidden',
+      }}>
+        {[
+          { num: '01', text: 'Higher-fidelity demos in less time.' },
+          { num: '02', text: 'Defensive deliverables that preempt "did you try X" objections.' },
+          { num: '03', text: 'Cross-tool memory — resume in Codex / Cursor / ChatGPT when Anthropic limits hit.' },
+        ].map(({ num, text }) => (
+          <div key={num} style={{
+            padding: '28px 32px',
+            background: 'var(--surface)',
+            borderRight: '1px solid var(--border2)',
+          }}>
+            <Mono style={{ fontSize: 11, color: 'var(--indigo)', marginBottom: 12, display: 'block', fontWeight: 500 }}>{num}</Mono>
+            <p style={{ fontSize: 14, color: 'var(--text-dim)', lineHeight: 1.6, fontWeight: 400 }}>{text}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ─── What it is ───────────────────────────────────────────────────────────────
+
+function WhatItIs() {
+  return (
+    <section style={{ padding: '60px 40px', maxWidth: 'var(--max-w)', margin: '0 auto' }}>
+      <SectionDivider label="What it is" />
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 2fr',
+        gap: 48,
+        alignItems: 'start',
+      }}>
+        <div>
+          <p style={{ fontSize: 13, color: 'var(--text-dimmer)', lineHeight: 1.7 }}>
+            An opinionated assembly of three tools — curated, model-routed, and extended with four custom skills that don't exist anywhere else.
+          </p>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <p style={{ fontSize: 16, color: 'var(--text-dim)', lineHeight: 1.8, fontWeight: 300 }}>
+            j-stack assembles Claude Code + Superpowers + cherry-picked gstack skills + four custom skills into an opinionated workflow pipeline.{' '}
+            <span style={{ color: 'var(--text)' }}>Each phase is owned by a specific skill — nothing overlaps, nothing conflicts.</span>{' '}
+            The result is a repeatable system for shipping polished, defensible PoC artifacts.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            {[
+              ['Spec before build', 'Writing-plans locks a full implementation spec before any code runs. Subagents implement against the spec, not a vague prompt.'],
+              ['TDD during build', 'The TDD skill enforces red-green-refactor discipline. Tests are written first, against the spec, then implementation follows.'],
+              ['Cross-vendor defense', 'OpenAI Codex independently reviews Claude\'s work. Convergent findings from two AI vendors are the strongest signal you can put in front of a skeptical architect.'],
+              ['Context that survives limits', 'A .planning/ wiki keeps every decision readable by Claude Code, Codex, Cursor, ChatGPT, and Gemini. Hitting usage limits mid-engagement is a handoff, not a loss.'],
+            ].map(([title, body]) => (
+              <div key={title} style={{ background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius-sm)', padding: '14px 16px' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>{title}</div>
+                <p style={{ fontSize: 12, color: 'var(--text-dimmer)', lineHeight: 1.6 }}>{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Building blocks ──────────────────────────────────────────────────────────
+
+function BuildingBlocks() {
+  const blocks = [
+    {
+      name: 'Claude Code',
+      badge: 'foundation',
+      badgeColor: 'var(--indigo)',
+      desc: "Anthropic's AI coding CLI. Not autocomplete — an autonomous agent that reasons about architecture, writes and edits files, runs tests, browses docs, and dispatches parallel subagents. Think of it as a senior engineer who lives in your terminal.",
+      link: 'https://claude.ai/code',
+    },
+    {
+      name: 'Superpowers',
+      badge: 'framework',
+      badgeColor: 'var(--cyan)',
+      desc: 'A plugin framework that installs structured workflow skills into Claude Code. Skills enforce how Claude approaches problems: brainstorm before planning, spec before building, test before shipping. j-stack uses brainstorming, writing-plans, TDD, and subagent-driven-development.',
+      link: 'https://github.com/obra/superpowers',
+    },
+    {
+      name: 'gstack',
+      badge: 'skill pack',
+      badgeColor: 'var(--amber)',
+      desc: 'A community skill pack with 40+ specialized tools: security audits, CEO-lens scoping, design QA, document generation. j-stack cherry-picks 11 skills that complement Superpowers and injects explicit model directives so expensive models aren\'t wasted on mechanical work.',
+      link: 'https://github.com/garrytan/gstack',
+    },
+  ];
+
+  return (
+    <section id="why" style={{ padding: '60px 40px', maxWidth: 'var(--max-w)', margin: '0 auto' }}>
+      <SectionDivider label="The building blocks" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 16 }}>
+        {blocks.map(({ name, badge, badgeColor, desc, link }) => (
+          <Card key={name} style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Mono style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>{name}</Mono>
+              <span style={{
+                fontSize: 10, fontWeight: 600, letterSpacing: '0.06em',
+                textTransform: 'uppercase', color: badgeColor,
+                background: `${badgeColor}18`, borderRadius: 4, padding: '2px 7px',
+              }}>{badge}</span>
+            </div>
+            <div style={{ padding: '18px 24px', flex: 1 }}>
+              <p style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.7 }}>{desc}</p>
+            </div>
+            <div style={{ padding: '12px 24px', borderTop: '1px solid var(--border2)' }}>
+              <a href={link} target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: 11, color: badgeColor, textDecoration: 'none', fontFamily: "'DM Mono', monospace" }}>
+                {link.replace('https://', '')} →
+              </a>
+            </div>
+          </Card>
+        ))}
+      </div>
+      <div style={{ padding: '20px 28px', background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 'var(--radius)' }}>
+        <p style={{ fontSize: 14, color: 'var(--text-dim)', lineHeight: 1.7 }}>
+          <span style={{ color: 'var(--text)' }}>j-stack is the opinionated assembly.</span>{' '}
+          Raw Superpowers + gstack is powerful but sprawling — 40+ skills with no lane ownership, no model discipline, and no cross-tool memory.
+          j-stack curates the set, routes models by cognitive demand, adds the four custom skills that complete the pipeline, and wires the whole thing into a repeatable workflow.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+// ─── SDLC Coverage ───────────────────────────────────────────────────────────
+
+const SDLC_PHASES = [
+  {
+    sdlc: 'Product Discovery',
+    stage: 'EXPAND',
+    skills: ['/office-hours', '/plan-ceo-review'],
+    pm: 'Are we solving the right problem? Founder/10x reframe before any engineering begins.',
+    color: 'var(--indigo)',
+  },
+  {
+    sdlc: 'Requirements & Ideation',
+    stage: 'REFINE',
+    skills: ['brainstorm (SP)'],
+    pm: 'Structured pressure-testing before committing to an approach.',
+    color: 'var(--indigo)',
+  },
+  {
+    sdlc: 'Feasibility / Build-vs-Buy',
+    stage: 'SURVEY',
+    skills: ['prior-art-survey'],
+    pm: 'Named, reasoned alternatives across OSS, libraries, and patterns. Every "did you try X" answered before the meeting.',
+    color: 'var(--cyan)',
+  },
+  {
+    sdlc: 'Technical Design',
+    stage: 'PLAN',
+    skills: ['writing-plans (SP)'],
+    pm: 'Spec locked before implementation begins. Explicit gate — nothing builds until this is done.',
+    color: 'var(--cyan)',
+  },
+  {
+    sdlc: 'Development',
+    stage: 'BUILD',
+    skills: ['subagent-driven-dev', 'TDD (SP)', '/design-shotgun'],
+    pm: 'TDD enforced (red-green-refactor). Parallel subagents implement against the locked spec.',
+    color: 'var(--amber)',
+  },
+  {
+    sdlc: 'QA & Security Review',
+    stage: 'POLISH',
+    skills: ['/qa', '/design-review', '/cso'],
+    pm: 'Definition of done against spec. OWASP/STRIDE risk management as a deliverable, not a checkbox.',
+    color: 'var(--amber)',
+  },
+  {
+    sdlc: 'Stakeholder Review',
+    stage: 'DEFEND',
+    skills: ['second-opinion', 'stakeholder-pack'],
+    pm: 'Pre-answered objections. Cross-vendor AI validation. Meeting shifts from "defend" to "what\'s next."',
+    color: 'var(--green)',
+  },
+  {
+    sdlc: 'Documentation & Handoff',
+    stage: 'HANDOFF',
+    skills: ['/document-release', 'handoff-snapshot'],
+    pm: 'Docs generated from diff, not written afterward. Knowledge transfer built in.',
+    color: 'var(--green)',
+  },
+];
+
+const PM_PRINCIPLES = [
+  ['Discovery before engineering', 'EXPAND + REFINE exist before a line of spec is written. The pipeline cannot reach PLAN without completing both.'],
+  ['Build vs. buy at every dependency', 'prior-art-survey dispatches three parallel scouts — OSS, libraries, patterns — and produces a named, reasoned landscape. Not a gut call.'],
+  ['Explicit phase gates', 'Each stage must complete before the next begins. Nothing in BUILD runs without a locked PLAN output.'],
+  ['Risk as a deliverable', '/cso files an OWASP/STRIDE finding set. second-opinion adds a cross-vendor risk matrix. Both are artifacts, not chat notes.'],
+  ['Docs built in, not bolted on', '/document-release generates docs from the diff. handoff-snapshot captures state. No documentation sprint at the end.'],
+  ['Parallel workstreams', 'subagent-driven-development and prior-art-survey\'s scouts both parallelize work the way a PM schedules concurrent engineering tracks.'],
+];
+
+function SDLCCoverage() {
+  const [activeRow, setActiveRow] = React.useState(null);
+
+  return (
+    <section id="sdlc" style={{ padding: '60px 40px', maxWidth: 'var(--max-w)', margin: '0 auto' }}>
+      <SectionDivider label="SDLC coverage — discovery to demo" />
+
+      {/* Phase table */}
+      <div style={{ marginBottom: 16 }}>
+        {/* Header */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: '200px 110px 1fr 2fr',
+          gap: 0, padding: '10px 20px',
+          background: 'var(--surface2)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius) var(--radius) 0 0',
+        }}>
+          {['SDLC Phase', 'Stage', 'Skills', 'PM Principle'].map(h => (
+            <Label key={h}>{h}</Label>
+          ))}
+        </div>
+
+        {/* Rows */}
+        {SDLC_PHASES.map((phase, i) => (
+          <div
+            key={phase.stage}
+            onMouseEnter={() => setActiveRow(i)}
+            onMouseLeave={() => setActiveRow(null)}
+            style={{
+              display: 'grid', gridTemplateColumns: '200px 110px 1fr 2fr',
+              gap: 0, padding: '14px 20px',
+              background: activeRow === i ? 'var(--surface2)' : i % 2 === 0 ? 'var(--surface)' : 'transparent',
+              border: '1px solid var(--border)',
+              borderTop: 'none',
+              borderRadius: i === SDLC_PHASES.length - 1 ? '0 0 var(--radius) var(--radius)' : 0,
+              transition: 'background 0.15s',
+              cursor: 'default',
+              alignItems: 'center',
+            }}
+          >
+            <span style={{ fontSize: 13, color: activeRow === i ? 'var(--text)' : 'var(--text-dim)', transition: 'color 0.15s' }}>{phase.sdlc}</span>
+            <Mono style={{
+              fontSize: 11, fontWeight: 500,
+              color: phase.color,
+              background: `${phase.color}18`,
+              border: `1px solid ${phase.color}33`,
+              borderRadius: 4, padding: '2px 8px',
+              display: 'inline-block', alignSelf: 'center',
+            }}>{phase.stage}</Mono>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 6px' }}>
+              {phase.skills.map(s => (
+                <Mono key={s} style={{ fontSize: 10, color: 'var(--text-dimmer)', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 3, padding: '2px 6px' }}>{s}</Mono>
+              ))}
+            </div>
+            <span style={{ fontSize: 12, color: 'var(--text-dimmer)', lineHeight: 1.6 }}>{phase.pm}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Out of scope callout */}
+      <div style={{
+        marginBottom: 32,
+        padding: '14px 20px',
+        background: 'transparent',
+        border: '1px solid var(--border2)',
+        borderRadius: 'var(--radius-sm)',
+        display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+      }}>
+        <Label style={{ whiteSpace: 'nowrap' }}>Out of scope by design</Label>
+        {[
+          'Deployment / Release ops',
+          'Monitoring / Observability',
+          'Incident response / Maintenance',
+        ].map(phase => (
+          <div key={phase} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 11, color: 'var(--text-dimmer)', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 3, padding: '2px 8px', fontFamily: "'DM Mono', monospace" }}>{phase}</span>
+          </div>
+        ))}
+        <span style={{ fontSize: 11, color: 'var(--text-dimmer)', marginLeft: 'auto' }}>PoC mission ≠ production</span>
+      </div>
+
+      {/* PM Principles grid */}
+      <div>
+        <Label style={{ marginBottom: 16 }}>Engineering PM principles baked in</Label>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 10 }}>
+          {PM_PRINCIPLES.map(([title, body]) => (
+            <div key={title} style={{
+              background: 'var(--surface)', border: '1px solid var(--border2)',
+              borderRadius: 'var(--radius-sm)', padding: '14px 18px',
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>{title}</div>
+              <p style={{ fontSize: 12, color: 'var(--text-dimmer)', lineHeight: 1.6 }}>{body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Spec-driven / TDD ────────────────────────────────────────────────────────
+
+function SpecDriven() {
+  return (
+    <section style={{ padding: '60px 40px', maxWidth: 'var(--max-w)', margin: '0 auto' }}>
+      <SectionDivider label="Spec-driven · TDD by default" />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+
+        <Card>
+          <div style={{ padding: '22px 26px', borderBottom: '1px solid var(--border2)' }}>
+            <Mono style={{ fontSize: 13, fontWeight: 500, color: 'var(--indigo)' }}>Plan before build</Mono>
+          </div>
+          <div style={{ padding: '20px 26px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.7 }}>
+              Nothing in BUILD starts until PLAN is locked. The pipeline enforces four phases before a line of implementation code is written: reframe the problem → pressure-test the approach → survey the prior art → spec the implementation.
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.7 }}>
+              <Mono style={{ color: 'var(--text)', fontSize: 12 }}>writing-plans</Mono> produces a full implementation plan reviewed by Opus. Subagents in BUILD implement against that spec — not a vague prompt, not a wish.
+            </p>
+          </div>
+        </Card>
+
+        <Card>
+          <div style={{ padding: '22px 26px', borderBottom: '1px solid var(--border2)' }}>
+            <Mono style={{ fontSize: 13, fontWeight: 500, color: 'var(--cyan)' }}>TDD during build</Mono>
+          </div>
+          <div style={{ padding: '20px 26px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.7 }}>
+              The <Mono style={{ color: 'var(--text)', fontSize: 12 }}>superpowers:test-driven-development</Mono> skill enforces red-green-refactor inside the build phase. Tests are written first against the spec; implementation follows only once the test is failing for the right reason.
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.7 }}>
+              <Mono style={{ color: 'var(--text)', fontSize: 12 }}>subagent-driven-development</Mono> parallelizes implementation across multiple Claude instances, each operating against the same locked spec and test suite.
+            </p>
+          </div>
+        </Card>
+
+        <Card style={{ gridColumn: '1 / -1' }}>
+          <div style={{ padding: '22px 26px', borderBottom: '1px solid var(--border2)' }}>
+            <Mono style={{ fontSize: 13, fontWeight: 500, color: 'var(--amber)' }}>Defensive by design — the five questions enterprise stakeholders always ask</Mono>
+          </div>
+          <div style={{ padding: '20px 26px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {[
+              ['Why did you build it this way?', '/office-hours + brainstorm', 'Vision doc traces the founder-lens reframe and every major decision made during scoping.'],
+              ['What else did you consider?', 'prior-art-survey', 'Parallel OSS, library, and pattern scouts produce a named, reasoned landscape. "Did you try X" is answered before it\'s asked.'],
+              ['Is it secure?', '/cso', 'OWASP Top 10 + STRIDE security review runs before the demo. Findings are filed by severity with recommended mitigations.'],
+              ['Does it actually work?', '/qa + TDD suite', 'QA audits the running app against the spec. The TDD test suite from BUILD provides the passing-green baseline.'],
+              ['Why should I trust one AI vendor?', 'second-opinion', 'OpenAI Codex independently reviews Claude\'s work. A convergence/divergence matrix is the deliverable — two AI vendors agreeing is a stronger signal than one.'],
+            ].map(([q, skill, answer]) => (
+              <div key={q} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ fontSize: 12, color: 'var(--text-dimmer)', fontStyle: 'italic' }}>"{q}"</div>
+                <Mono style={{ fontSize: 11, color: 'var(--amber)', background: 'var(--amber-dim)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 4, padding: '2px 8px', display: 'inline-block', alignSelf: 'flex-start' }}>{skill}</Mono>
+                <p style={{ fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.6 }}>{answer}</p>
+              </div>
+            ))}
+            <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius-sm)', padding: '14px 16px' }}>
+              <div>
+                <Mono style={{ fontSize: 12, color: 'var(--green)', display: 'block', marginBottom: 6 }}>stakeholder-pack</Mono>
+                <p style={{ fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.6 }}>All five answers assembled into one executive-ready document before the demo. The meeting shifts from "defend the work" to "discuss what's next."</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </section>
+  );
+}
+
+// ─── Pipeline ─────────────────────────────────────────────────────────────────
+
+const PIPELINE_STAGES = [
+  { name: 'EXPAND',  skills: ['/office-hours', '/plan-ceo-review'] },
+  { name: 'REFINE',  skills: ['brainstorm (SP)'] },
+  { name: 'SURVEY',  skills: ['prior-art-survey'] },
+  { name: 'PLAN',    skills: ['writing-plans (SP)'] },
+  { name: 'BUILD',   skills: ['subagent-driven-dev', '/design-shotgun', '/design-html'] },
+  { name: 'POLISH',  skills: ['/qa', '/design-review', '/cso'] },
+  { name: 'DEFEND',  skills: ['second-opinion', 'stakeholder-pack'] },
+  { name: 'HANDOFF', skills: ['/document-release', 'handoff-snapshot'] },
+];
+
+function PipelineStage({ stage, index, isLast, activeStage, onHover }) {
+  const isActive = activeStage === index;
+  const stageColors = {
+    0: 'var(--indigo)',
+    1: 'var(--indigo)',
+    2: 'var(--cyan)',
+    3: 'var(--cyan)',
+    4: 'var(--amber)',
+    5: 'var(--amber)',
+    6: 'var(--green)',
+    7: 'var(--green)',
+  };
+  const color = stageColors[index];
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'stretch', flex: 1, minWidth: 0 }}>
+      <div
+        style={{ flex: 1, minWidth: 0, cursor: 'default', position: 'relative' }}
+        onMouseEnter={() => onHover(index)}
+        onMouseLeave={() => onHover(null)}
+      >
+        {/* Stage box */}
+        <div style={{
+          background: isActive ? 'var(--surface2)' : 'var(--surface)',
+          border: `1px solid ${isActive ? color : 'var(--border)'}`,
+          borderRadius: 'var(--radius-sm)',
+          padding: '18px 16px 14px',
+          transition: 'all 0.2s ease',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          boxShadow: isActive ? `0 0 0 1px ${color}22, 0 4px 20px ${color}18` : 'none',
+        }}>
+          {/* Stage name */}
+          <Mono style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: isActive ? color : 'var(--text)',
+            letterSpacing: '0.04em',
+            transition: 'color 0.2s',
+          }}>
+            {stage.name}
+          </Mono>
+
+          {/* Divider */}
+          <div style={{ height: 1, background: isActive ? `${color}44` : 'var(--border2)', transition: 'background 0.2s' }}></div>
+
+          {/* Skills */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {stage.skills.map((skill, i) => (
+              <Mono key={i} style={{
+                fontSize: 10,
+                color: isActive ? color : 'var(--text-dimmer)',
+                transition: 'color 0.2s',
+                lineHeight: 1.5,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}>
+                {skill}
+              </Mono>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Arrow connector */}
+      {!isLast && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 4px',
+          color: 'var(--text-dimmer)',
+          fontSize: 14,
+          flexShrink: 0,
+        }}>
+          <Mono style={{ fontSize: 12, color: 'var(--text-dimmer)' }}>→</Mono>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Pipeline() {
+  const [activeStage, setActiveStage] = useState(null);
+
+  return (
+    <section id="pipeline" style={{ padding: '60px 40px', maxWidth: 'var(--max-w)', margin: '0 auto' }}>
+      <SectionDivider label="Pipeline" />
+
+      {/* CLI-style header bar */}
+      <div style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius)',
+        overflow: 'hidden',
+        marginBottom: 16,
+      }}>
+        {/* Terminal chrome */}
+        <div style={{
+          background: 'var(--surface2)',
+          borderBottom: '1px solid var(--border2)',
+          padding: '10px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {['#f87171','#fbbf24','#34d399'].map((c, i) => (
+              <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: c, opacity: 0.6 }}></div>
+            ))}
+          </div>
+          <Mono style={{ fontSize: 11, color: 'var(--text-dimmer)' }}>j-stack pipeline · 8 stages</Mono>
+        </div>
+
+        {/* Pipeline stages */}
+        <div style={{ padding: '20px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'stretch', gap: 0 }}>
+            {PIPELINE_STAGES.map((stage, i) => (
+              <PipelineStage
+                key={stage.name}
+                stage={stage}
+                index={i}
+                isLast={i === PIPELINE_STAGES.length - 1}
+                activeStage={activeStage}
+                onHover={setActiveStage}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Status bar */}
+        <div style={{
+          background: 'var(--surface2)',
+          borderTop: '1px solid var(--border2)',
+          padding: '8px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+        }}>
+          <Mono style={{ fontSize: 10, color: 'var(--text-dimmer)' }}>
+            {activeStage !== null
+              ? `stage ${activeStage + 1}/8 · ${PIPELINE_STAGES[activeStage].name} · ${PIPELINE_STAGES[activeStage].skills.length} skill${PIPELINE_STAGES[activeStage].skills.length > 1 ? 's' : ''}`
+              : 'hover a stage to inspect'}
+          </Mono>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 12 }}>
+            {[
+              { color: 'var(--indigo)', label: 'Discovery' },
+              { color: 'var(--cyan)', label: 'Planning' },
+              { color: 'var(--amber)', label: 'Execution' },
+              { color: 'var(--green)', label: 'Delivery' },
+            ].map(({ color, label }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: color }}></div>
+                <Mono style={{ fontSize: 10, color: 'var(--text-dimmer)' }}>{label}</Mono>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <p style={{ fontSize: 12, color: 'var(--text-dimmer)', marginTop: 10 }}>
+        <Mono>SP = Superpowers</Mono>
+      </p>
+    </section>
+  );
+}
+
+// ─── Stack Layers ─────────────────────────────────────────────────────────────
+
+const STACK_LAYERS = [
+  {
+    layer: 'Superpowers',
+    badge: 'core',
+    badgeColor: 'var(--indigo)',
+    tools: ['brainstorming', 'writing-plans', 'subagent-driven-development'],
+  },
+  {
+    layer: 'gstack',
+    badge: '11 skills',
+    badgeColor: 'var(--cyan)',
+    tools: ['/office-hours', '/plan-ceo-review', '/qa', '/design-shotgun', '/design-html', '/design-review', '/cso', '/codex', '/document-release', '/freeze', '/guard'],
+  },
+  {
+    layer: 'Custom skills',
+    badge: '4 skills',
+    badgeColor: 'var(--amber)',
+    tools: ['poc-wiki-init', 'handoff-snapshot', 'second-opinion', 'stakeholder-pack'],
+  },
+  {
+    layer: 'prior-art-survey',
+    badge: 'scout',
+    badgeColor: 'var(--green)',
+    tools: ['Parallel OSS scouts', 'library pattern matching', 'competitive landscape'],
+  },
+];
+
+function StackLayers() {
+  return (
+    <section id="stack" style={{ padding: '60px 40px', maxWidth: 'var(--max-w)', margin: '0 auto' }}>
+      <SectionDivider label="Stack layers" />
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        {STACK_LAYERS.map((row, i) => (
+          <div key={row.layer} style={{
+            display: 'grid',
+            gridTemplateColumns: '220px 1fr',
+            gap: 0,
+            borderTop: i === 0 ? '1px solid var(--border)' : 'none',
+            borderBottom: '1px solid var(--border)',
+            borderLeft: '1px solid var(--border)',
+            borderRight: '1px solid var(--border)',
+            background: i % 2 === 0 ? 'var(--surface)' : 'transparent',
+            borderRadius: i === 0 ? `var(--radius) var(--radius) 0 0` : i === STACK_LAYERS.length - 1 ? `0 0 var(--radius) var(--radius)` : 0,
+            overflow: 'hidden',
+          }}>
+            {/* Layer name column */}
+            <div style={{
+              padding: '20px 24px',
+              borderRight: '1px solid var(--border2)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 10,
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }}>
+              <Mono style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{row.layer}</Mono>
+              <span style={{
+                fontSize: 10, fontWeight: 600, letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: row.badgeColor,
+                background: `${row.badgeColor}18`,
+                borderRadius: 4,
+                padding: '2px 7px',
+              }}>
+                {row.badge}
+              </span>
+            </div>
+
+            {/* Tools column */}
+            <div style={{
+              padding: '20px 24px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '6px 8px',
+              alignContent: 'center',
+            }}>
+              {row.tools.map(t => (
+                <Mono key={t} style={{
+                  fontSize: 11,
+                  color: 'var(--text-dim)',
+                  background: 'var(--surface2)',
+                  border: '1px solid var(--border2)',
+                  borderRadius: 4,
+                  padding: '3px 8px',
+                }}>
+                  {t}
+                </Mono>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ─── Model Routing ────────────────────────────────────────────────────────────
+
+function ModelRouting() {
+  return (
+    <section style={{ padding: '60px 40px', maxWidth: 'var(--max-w)', margin: '0 auto' }}>
+      <SectionDivider label="Model routing" />
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        {/* Opus */}
+        <Card accent>
+          <div style={{
+            padding: '24px 28px',
+            borderBottom: '1px solid var(--border2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}>
+            <div style={{
+              width: 32, height: 32,
+              borderRadius: 8,
+              background: 'var(--indigo-dim)',
+              border: '1px solid rgba(99,102,241,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Mono style={{ fontSize: 11, color: 'var(--indigo)', fontWeight: 500 }}>opus</Mono>
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>claude-opus</div>
+              <Label>Judgment moments</Label>
+            </div>
+          </div>
+          <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {['Scoping & discovery', 'Security review', 'Cross-model synthesis', 'Stakeholder framing'].map(item => (
+              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--indigo)', flexShrink: 0 }}></div>
+                <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>{item}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Haiku */}
+        <Card>
+          <div style={{
+            padding: '24px 28px',
+            borderBottom: '1px solid var(--border2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}>
+            <div style={{
+              width: 32, height: 32,
+              borderRadius: 8,
+              background: 'var(--cyan-dim)',
+              border: '1px solid rgba(34,211,238,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Mono style={{ fontSize: 11, color: 'var(--cyan)', fontWeight: 500 }}>hku</Mono>
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>claude-haiku</div>
+              <Label>Housekeeping</Label>
+            </div>
+          </div>
+          <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {['Templating', 'Summarizing', 'Mechanical operations'].map(item => (
+              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--cyan)', flexShrink: 0 }}></div>
+                <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>{item}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    </section>
+  );
+}
+
+// ─── Cross-tool memory ────────────────────────────────────────────────────────
+
+function CrossToolMemory() {
+  return (
+    <section id="memory" style={{ padding: '60px 40px', maxWidth: 'var(--max-w)', margin: '0 auto' }}>
+      <SectionDivider label="Cross-tool memory" />
+
+      <Card accent style={{ overflow: 'visible' }}>
+        <div style={{
+          padding: '32px 36px',
+          borderBottom: '1px solid var(--border2)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <span style={{
+              display: 'inline-block', width: 7, height: 7, borderRadius: '50%',
+              background: 'var(--green)',
+              animation: 'pulse-dot 2s ease infinite',
+            }}></span>
+            <h2 style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.01em' }}>
+              Never lose context at usage limits.
+            </h2>
+          </div>
+          <p style={{ fontSize: 14, color: 'var(--text-dim)', maxWidth: 680, lineHeight: 1.7 }}>
+            Each PoC project gets a <Mono style={{ color: 'var(--amber)', fontSize: 13 }}>.planning/</Mono> wiki with schema files for every major tool —{' '}
+            <Mono style={{ color: 'var(--text-dim)', fontSize: 12 }}>CLAUDE.md</Mono>,{' '}
+            <Mono style={{ color: 'var(--text-dim)', fontSize: 12 }}>AGENTS.md</Mono>,{' '}
+            <Mono style={{ color: 'var(--text-dim)', fontSize: 12 }}>.cursor/rules</Mono>,{' '}
+            <Mono style={{ color: 'var(--text-dim)', fontSize: 12 }}>chatgpt-brief.md</Mono>.{' '}
+            When Anthropic limits hit, run <Mono style={{ color: 'var(--amber)', fontSize: 12 }}>handoff-snapshot</Mono> and paste the continuation prompt into your next tool.
+          </p>
+        </div>
+
+        {/* Diagram */}
+        <div style={{ padding: '32px 36px', background: 'var(--surface2)' }}>
+          <Label style={{ marginBottom: 24 }}>Context flow</Label>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0,
+            flexWrap: 'wrap',
+            rowGap: 16,
+          }}>
+            {/* Claude Code */}
+            <div style={{
+              background: 'var(--surface)',
+              border: '1px solid rgba(99,102,241,0.35)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '14px 20px',
+              textAlign: 'center',
+              minWidth: 120,
+            }}>
+              <Mono style={{ fontSize: 12, color: 'var(--indigo)', display: 'block', marginBottom: 4 }}>Claude Code</Mono>
+              <span style={{ fontSize: 10, color: 'var(--text-dimmer)' }}>primary agent</span>
+            </div>
+
+            {/* Arrow */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '0 12px' }}>
+              <Mono style={{ fontSize: 13, color: 'var(--text-dimmer)' }}>↔</Mono>
+              <span style={{ fontSize: 9, color: 'var(--text-dimmer)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>sync</span>
+            </div>
+
+            {/* Wiki */}
+            <div style={{
+              background: 'var(--surface)',
+              border: '1px solid rgba(251,191,36,0.35)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '14px 20px',
+              textAlign: 'center',
+              minWidth: 140,
+            }}>
+              <Mono style={{ fontSize: 12, color: 'var(--amber)', display: 'block', marginBottom: 4 }}>.planning/wiki</Mono>
+              <span style={{ fontSize: 10, color: 'var(--text-dimmer)' }}>shared memory</span>
+            </div>
+
+            {/* Arrow */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '0 12px' }}>
+              <Mono style={{ fontSize: 13, color: 'var(--text-dimmer)' }}>↔</Mono>
+              <span style={{ fontSize: 9, color: 'var(--text-dimmer)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>handoff</span>
+            </div>
+
+            {/* Tools */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {[
+                { label: 'Codex', color: 'var(--green)' },
+                { label: 'Cursor', color: 'var(--green)' },
+                { label: 'ChatGPT', color: 'var(--green)' },
+                { label: 'Gemini', color: 'var(--green)' },
+              ].map(({ label, color }) => (
+                <div key={label} style={{
+                  background: 'var(--surface)',
+                  border: `1px solid rgba(52,211,153,0.25)`,
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '10px 14px',
+                  textAlign: 'center',
+                }}>
+                  <Mono style={{ fontSize: 11, color, display: 'block' }}>{label}</Mono>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Schema files */}
+          <div style={{ marginTop: 28, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Label style={{ alignSelf: 'center', marginRight: 4 }}>schema files</Label>
+            {['CLAUDE.md', 'AGENTS.md', '.cursor/rules', 'chatgpt-brief.md'].map(f => (
+              <Mono key={f} style={{
+                fontSize: 11,
+                color: 'var(--text-dimmer)',
+                background: 'var(--surface)',
+                border: '1px solid var(--border2)',
+                borderRadius: 4,
+                padding: '4px 10px',
+              }}>
+                {f}
+              </Mono>
+            ))}
+          </div>
+        </div>
+      </Card>
+    </section>
+  );
+}
+
+// ─── Install ──────────────────────────────────────────────────────────────────
+
+function Install() {
+  const [copied, setCopied] = useState(false);
+  const code = `git clone https://github.com/jpagano-r7/j-stack.git\ncd j-stack\nbash install.sh`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <section id="install" style={{ padding: '60px 40px', maxWidth: 'var(--max-w)', margin: '0 auto' }}>
+      <SectionDivider label="Install" />
+
+      <Card style={{ overflow: 'visible' }}>
+        {/* Terminal chrome */}
+        <div style={{
+          background: 'var(--surface2)',
+          borderBottom: '1px solid var(--border2)',
+          padding: '10px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {['#f87171','#fbbf24','#34d399'].map((c, i) => (
+                <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: c, opacity: 0.6 }}></div>
+              ))}
+            </div>
+            <Mono style={{ fontSize: 11, color: 'var(--text-dimmer)' }}>bash</Mono>
+          </div>
+          <button
+            onClick={handleCopy}
+            style={{
+              background: 'none',
+              border: '1px solid var(--border2)',
+              borderRadius: 4,
+              padding: '3px 10px',
+              cursor: 'pointer',
+              fontSize: 11,
+              color: copied ? 'var(--green)' : 'var(--text-dimmer)',
+              fontFamily: "'DM Mono', monospace",
+              transition: 'all 0.2s',
+            }}
+          >
+            {copied ? '✓ copied' : 'copy'}
+          </button>
+        </div>
+
+        {/* Code */}
+        <div style={{ padding: '28px 32px' }}>
+          {code.split('\n').map((line, i) => (
+            <div key={i} style={{ display: 'flex', gap: 16, marginBottom: i < 2 ? 8 : 0 }}>
+              <Mono style={{ fontSize: 13, color: 'var(--text-dimmer)', userSelect: 'none', minWidth: 16 }}>
+                {'>'}
+              </Mono>
+              <Mono style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.6 }}>
+                {line.split(/(https?:\/\/[^\s]+)/).map((part, j) =>
+                  part.startsWith('http') ? (
+                    <a key={j} href={part} target="_blank" rel="noopener noreferrer"
+                      style={{ color: 'var(--indigo)', textDecoration: 'none' }}
+                    >{part}</a>
+                  ) : part
+                )}
+              </Mono>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </section>
+  );
+}
+
+// ─── Footer ───────────────────────────────────────────────────────────────────
+
+function Footer() {
+  return (
+    <footer style={{
+      borderTop: '1px solid var(--border2)',
+      padding: '28px 40px',
+      maxWidth: 'var(--max-w)',
+      margin: '0 auto',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Mono style={{ fontSize: 13, color: 'var(--indigo)' }}>j-stack</Mono>
+        <span style={{ color: 'var(--text-dimmer)', fontSize: 12 }}>· Maintained by Jeff Pagano</span>
+      </div>
+      <a
+        href="https://github.com/jpagano-r7/j-stack"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          fontSize: 12, color: 'var(--text-dimmer)',
+          textDecoration: 'none',
+          transition: 'color 0.2s',
+        }}
+        onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+        onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dimmer)'}
+      >
+        <GitHubIcon size={13} />
+        jpagano-r7/j-stack
+      </a>
+    </footer>
+  );
+}
+
+// ─── Tweaks Panel ─────────────────────────────────────────────────────────────
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accentColor": "indigo",
+  "density": "comfortable",
+  "showPipelineLegend": true
+}/*EDITMODE-END*/;
+
+function TweaksPanel({ tweaks, setTweak, onClose }) {
+  return (
+    <div style={{
+      position: 'fixed', bottom: 24, right: 24, zIndex: 999,
+      background: 'var(--surface)',
+      border: '1px solid rgba(99,102,241,0.3)',
+      borderRadius: 'var(--radius)',
+      width: 240,
+      boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+      fontFamily: "'DM Sans', sans-serif",
+    }}>
+      <div style={{
+        padding: '14px 16px',
+        borderBottom: '1px solid var(--border2)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <Label>Tweaks</Label>
+        <button onClick={onClose} style={{
+          background: 'none', border: 'none', cursor: 'pointer',
+          color: 'var(--text-dimmer)', fontSize: 16, lineHeight: 1, padding: 0,
+        }}>×</button>
+      </div>
+      <div style={{ padding: '16px' }}>
+        {/* Accent */}
+        <div style={{ marginBottom: 16 }}>
+          <Label style={{ marginBottom: 8 }}>Accent color</Label>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[
+              { key: 'indigo', color: '#6366f1' },
+              { key: 'cyan', color: '#22d3ee' },
+              { key: 'amber', color: '#fbbf24' },
+              { key: 'green', color: '#34d399' },
+            ].map(({ key, color }) => (
+              <button key={key} onClick={() => setTweak('accentColor', key)} style={{
+                width: 24, height: 24, borderRadius: 6,
+                background: color, border: tweaks.accentColor === key ? '2px solid white' : '2px solid transparent',
+                cursor: 'pointer', transition: 'border 0.15s',
+              }} />
+            ))}
+          </div>
+        </div>
+        {/* Density */}
+        <div style={{ marginBottom: 16 }}>
+          <Label style={{ marginBottom: 8 }}>Density</Label>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {['compact', 'comfortable'].map(d => (
+              <button key={d} onClick={() => setTweak('density', d)} style={{
+                flex: 1,
+                padding: '5px 0',
+                background: tweaks.density === d ? 'var(--surface3)' : 'none',
+                border: `1px solid ${tweaks.density === d ? 'rgba(99,102,241,0.4)' : 'var(--border2)'}`,
+                borderRadius: 4, cursor: 'pointer',
+                fontSize: 11, color: tweaks.density === d ? 'var(--text)' : 'var(--text-dimmer)',
+                fontFamily: "'DM Mono', monospace",
+                transition: 'all 0.15s',
+              }}>{d}</button>
+            ))}
+          </div>
+        </div>
+        {/* Legend toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Label>Pipeline legend</Label>
+          <button onClick={() => setTweak('showPipelineLegend', !tweaks.showPipelineLegend)} style={{
+            width: 36, height: 20,
+            background: tweaks.showPipelineLegend ? 'var(--indigo)' : 'var(--surface3)',
+            border: 'none', borderRadius: 10, cursor: 'pointer',
+            position: 'relative', transition: 'background 0.2s',
+          }}>
+            <div style={{
+              position: 'absolute', top: 3, left: tweaks.showPipelineLegend ? 18 : 3,
+              width: 14, height: 14, borderRadius: '50%',
+              background: 'white', transition: 'left 0.2s',
+            }}></div>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+
+function App() {
+  const [tweaks, setTweaksState] = useState(TWEAK_DEFAULTS);
+  const [tweaksVisible, setTweaksVisible] = useState(false);
+
+  const setTweak = (key, value) => {
+    const updated = { ...tweaks, [key]: value };
+    setTweaksState(updated);
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: updated }, '*');
+  };
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === '__activate_edit_mode') setTweaksVisible(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaksVisible(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const accentMap = {
+    indigo: '#6366f1',
+    cyan: '#22d3ee',
+    amber: '#fbbf24',
+    green: '#34d399',
+  };
+  const accent = accentMap[tweaks.accentColor] || '#6366f1';
+  const sectionPad = tweaks.density === 'compact' ? '40px 40px' : '60px 40px';
+
+  return (
+    <div style={{
+      '--indigo': accent,
+      '--indigo-dim': `${accent}1a`,
+      '--indigo-glow': `${accent}59`,
+      '--border': `${accent}26`,
+    }}>
+      <Nav />
+      <main>
+        <Hero />
+        <BuildingBlocks />
+        <WhatItIs />
+        <SDLCCoverage />
+        <SpecDriven />
+        <Pipeline />
+        <StackLayers />
+        <ModelRouting />
+        <CrossToolMemory />
+        <Install />
+      </main>
+      <Footer />
+      {tweaksVisible && (
+        <TweaksPanel
+          tweaks={tweaks}
+          setTweak={setTweak}
+          onClose={() => {
+            setTweaksVisible(false);
+            window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
