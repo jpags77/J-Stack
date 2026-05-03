@@ -13,13 +13,25 @@ A Claude Code stack optimized for enterprise PoC delivery.
 
 ## Executive summary — start here if you're new
 
-### The building blocks
+### Why Superpowers changes everything
 
-**[Claude Code](https://claude.ai/code)** is Anthropic's AI coding CLI. It's not autocomplete — it's an autonomous agent that reasons about architecture, writes and edits files, runs tests, browses documentation, and dispatches subagents. Think of it as a senior engineer who lives in your terminal.
+If you know Claude Code, you know the failure modes: agents that drift off-spec as context fills, implementations that "look right" but weren't test-driven, parallel subagents that clobber each other's work, half-finished features marked done. Good engineers solve these with process discipline. **[Superpowers](https://github.com/obra/superpowers)** is that discipline, encoded as skills.
 
-**[Superpowers](https://github.com/obra/superpowers)** is a plugin framework that installs *skills* into Claude Code. Skills are structured workflow instructions that tell Claude *how* to approach problems, not just what to do. Key examples: `brainstorming` enforces structured idea pressure-testing before any planning begins; `writing-plans` locks a full implementation spec before a single line of code is written; `test-driven-development` enforces red-green-refactor discipline during the build phase; `subagent-driven-development` parallelizes implementation across multiple Claude instances, each working against the locked spec.
+Each skill is the answer to a known agentic coding anti-pattern:
 
-**[gstack](https://github.com/garrytan/gstack)** is a community skill pack — 40+ specialized tools covering security audits (OWASP/STRIDE), CEO-lens scoping, design QA, document generation, and more.
+| Skill | Anti-pattern it solves |
+|-------|------------------------|
+| `brainstorming` | Building the wrong thing perfectly. Forces structured pressure-testing of the product idea — *is this actually the right problem?* — before any engineering begins. |
+| `writing-plans` | Spec drift. Locks a full implementation plan, reviewed by Opus, before a single line of code runs. Subagents implement against the spec, not against context that's 80k tokens deep. |
+| `test-driven-development` | Code that looks right but isn't. Enforces red-green-refactor: tests are written first against the spec, implementation follows only when the test fails for the right reason. |
+| `subagent-driven-development` | Sequential bottlenecks. Parallelizes implementation across multiple Claude instances, each with a bounded task from the spec. |
+| `using-git-worktrees` | Parallel agents clobbering each other. Each subagent gets its own git worktree — isolated branch, clean working tree, no collisions. |
+| `systematic-debugging` | Thrashing. Replaces "try random things until it works" with a structured hypothesis → reproduce → isolate → fix protocol. |
+| `verification-before-completion` | Premature done. Claude verifies the task actually meets its acceptance criteria before marking it complete — not just "the code runs." |
+
+Together these aren't features — they're **a baseline of agentic coding discipline** that most teams wing on every project. Superpowers makes them the default.
+
+**[gstack](https://github.com/garrytan/gstack)** extends this with 40+ specialized tools for security audits, CEO-lens scoping, design QA, and document generation. j-stack cherry-picks 11 skills that fit the PoC workflow without conflicting with Superpowers' lanes.
 
 ### What j-stack adds on top
 
