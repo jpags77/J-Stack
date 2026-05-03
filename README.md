@@ -31,7 +31,35 @@ Each skill is the answer to a known agentic coding anti-pattern:
 
 Together these aren't features — they're **a baseline of agentic coding discipline** that most teams wing on every project. Superpowers makes them the default.
 
-**[gstack](https://github.com/garrytan/gstack)** extends this with 40+ specialized tools for security audits, CEO-lens scoping, design QA, and document generation. j-stack cherry-picks 11 skills that fit the PoC workflow without conflicting with Superpowers' lanes.
+**[gstack](https://github.com/garrytan/gstack)** is a community skill pack with 40+ tools. j-stack doesn't install it wholesale — that would conflict with Superpowers' planning lane and add adoption tax. Instead, 11 skills are cherry-picked for the gaps Superpowers doesn't cover: frontend scoping, UI work, security, QA, docs, and safety guardrails.
+
+**Expand phase — Opus (judgment)**
+
+| Skill | What it does | Why this one |
+|-------|-------------|--------------|
+| `/office-hours` | YC-style office hours. Challenges your assumptions about what you're building — *is this the right problem?* — before any engineering begins. | Highest-judgment moment in the pipeline. Reframes "what to build" as "what problem to solve." Opus only. |
+| `/plan-ceo-review` | CEO/founder-lens scope challenge. Asks: is this the right scope? What's the minimum viable version? What would a 10x founder cut? | Pairs with `/office-hours` to pressure-test both the problem and the proposed solution before REFINE begins. |
+
+**Polish phase — Sonnet (execution)**
+
+| Skill | What it does | Why this one |
+|-------|-------------|--------------|
+| `/qa` | Systematic audit against a rubric — runs known user flows, checks edge cases, produces a structured findings report. | Not a vibe check. An audit against the spec. Runs after BUILD, before DEFEND. |
+| `/design-shotgun` | Generates multiple design directions rapidly to explore the space before committing. | Used at the start of UI work. Avoids converging on the first idea. Feeds `/design-html`. |
+| `/design-html` | Takes a mockup or design direction and converts it to production-quality HTML/CSS. | The execution skill for UI work. Pairs with `/design-shotgun` — explore, then build. |
+| `/design-review` | Audits the implemented UI against design principles: consistency, hierarchy, accessibility basics. | Closes the loop on UI work after `/design-html`. Catches regressions before the demo. |
+| `/cso` | Chief Security Officer mode. OWASP Top 10 + STRIDE analysis with findings by severity. | Security exploit reasoning is high-judgment work — Opus. Runs before DEFEND so the stakeholder pack has a real security section. |
+| `/codex` | Orchestrates a shell-out to OpenAI Codex CLI. | Used internally by the `second-opinion` custom skill for cross-vendor review. Not invoked directly. |
+| `/document-release` | Reads the diff and updates docs to match. | No manual documentation sprint at the end. Docs are a diff operation, not a writing assignment. |
+
+**Safety — Haiku (mechanical)**
+
+| Skill | What it does | Why this one |
+|-------|-------------|--------------|
+| `/freeze` | Locks specific files from editing. | Protects finalized artifacts (specs, stakeholder docs) from being modified mid-session. |
+| `/guard` | Combines `/freeze` with careful mode. | Adds a second layer when you need Claude to treat certain files as read-only under any circumstances. |
+
+**What was skipped and why:** gstack's `/autoplan` and `/plan-eng-review` overlap Superpowers' planning lane — two planners create conflicts. `/ship`, `/canary`, `/investigate`, and `/land-and-deploy` are prod-shipping tools; PoC mission doesn't need them. `/retro`, `/pair-agent`, and `gbrain` solve problems outside the PoC scope entirely.
 
 ### What j-stack adds on top
 
