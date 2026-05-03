@@ -42,13 +42,7 @@ if ! claude --help 2>/dev/null | grep -q "superpowers\|brainstorm"; then
   [[ $yn =~ ^[Yy]$ ]] || halt "Aborted. Install Superpowers first."
 fi
 
-# prior-art-survey skill check
-if [ ! -f "${SKILLS_DIR}/prior-art-survey/SKILL.md" ]; then
-  warn "prior-art-survey skill not found at ${SKILLS_DIR}/prior-art-survey/SKILL.md"
-  warn "This skill is delivered separately. Install it before running j-stack's survey phase."
-  read -rp "Continue without it? [y/N] " yn
-  [[ $yn =~ ^[Yy]$ ]] || halt "Aborted. Install prior-art-survey first."
-fi
+# prior-art skills are bundled in this repo — installed in Phase 2.5 below
 
 # ─── Phase 0.5: Codex CLI ─────────────────────────────────────────────────────
 
@@ -591,6 +585,22 @@ Confirm path. Note: for executive consumption, pipe through markdown-to-PDF or p
 - **Hiding gaps.** The production-gap section is critical. Naming gaps explicitly increases credibility.
 SKILL_EOF
 
+# ─── Phase 2.5: Prior-art research skills ─────────────────────────────────────
+
+info "Phase 2.5 — Installing prior-art research skills…"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PRIOR_ART_SKILLS=(prior-art-survey prior-art-oss-scout prior-art-library-scout prior-art-patterns-scout)
+
+for skill in "${PRIOR_ART_SKILLS[@]}"; do
+  src="${SCRIPT_DIR}/skills/${skill}"
+  if [ ! -d "$src" ]; then
+    halt "Expected skills/${skill}/ not found in repo. Clone may be incomplete."
+  fi
+  cp -r "$src" "${SKILLS_DIR}/"
+  info "  Installed ${skill}"
+done
+
 # ─── Phase 3: CLAUDE.md configuration ────────────────────────────────────────
 
 info "Phase 3 — Configuring project CLAUDE.md…"
@@ -641,7 +651,7 @@ if [ "$SKIP_VERIFY" = false ]; then
   all_ok=true
 
   # Check all skills exist
-  ALL_SKILLS=("${GSTACK_SKILLS[@]}" poc-wiki-init handoff-snapshot second-opinion stakeholder-pack)
+  ALL_SKILLS=("${GSTACK_SKILLS[@]}" poc-wiki-init handoff-snapshot second-opinion stakeholder-pack "${PRIOR_ART_SKILLS[@]}")
   for skill in "${ALL_SKILLS[@]}"; do
     if [ -d "${SKILLS_DIR}/${skill}" ]; then
       info "  ✓ ${skill}"

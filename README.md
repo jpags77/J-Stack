@@ -81,7 +81,7 @@ Together these aren't features — they're **a baseline of agentic coding discip
 
 ### prior-art-survey — a net new addition
 
-Neither Superpowers nor gstack ships a prior-art research agent. This is an original addition to the stack, and it fills a real gap: **AI agents are enthusiastic reinventors of wheels.**
+Neither Superpowers nor gstack ships a prior-art research agent. This is an original addition, bundled in this repo under `skills/`, and it fills a real gap: **AI agents are enthusiastic reinventors of wheels.**
 
 `prior-art-survey` dispatches three parallel scouts before any implementation begins:
 
@@ -189,7 +189,7 @@ All five are assembled by `stakeholder-pack` into a single document before the d
 
 - [Claude Code](https://claude.ai/code) installed (`which claude`)
 - [Superpowers plugin](https://github.com/obra/superpowers) installed in Claude Code
-- `prior-art-survey` skill (delivered separately — ask if you don't have it)
+- `prior-art-survey` + three scout skills (bundled in this repo — installed automatically by `install.sh`)
 - [OpenAI Codex CLI](https://github.com/openai/codex) installed and authenticated (for `second-opinion`)
 - git, bash, standard Unix tools
 
