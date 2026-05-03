@@ -11,7 +11,7 @@ A Claude Code stack optimized for enterprise PoC delivery.
 
 ---
 
-## Executive summary — start here if you're new
+## Executive summary
 
 ### Why Superpowers changes everything
 
@@ -61,15 +61,51 @@ Together these aren't features — they're **a baseline of agentic coding discip
 
 **What was skipped and why:** gstack's `/autoplan` and `/plan-eng-review` overlap Superpowers' planning lane — two planners create conflicts. `/ship`, `/canary`, `/investigate`, and `/land-and-deploy` are prod-shipping tools; PoC mission doesn't need them. `/retro`, `/pair-agent`, and `gbrain` solve problems outside the PoC scope entirely.
 
-### What j-stack adds on top
+### Prior-art research — a net new addition
 
-Raw Superpowers + gstack is powerful but sprawling. j-stack is an opinionated assembly that makes specific choices:
+Neither Superpowers nor gstack ships a prior-art research agent. This is an original addition to the stack, and it fills a real gap: AI agents are enthusiastic reinventors of wheels.
 
-- **Cherry-picks 11 of gstack's 40+ skills** — only the ones that complement rather than conflict with Superpowers' workflow
-- **Injects explicit model directives** into each skill so you're not burning Opus credits on mechanical templating tasks
-- **Builds 4 custom skills** that don't exist anywhere else (see below)
-- **Wires up a `.planning/` wiki** readable by Claude Code, Codex CLI, Cursor, ChatGPT, and Gemini — context survives tool switches mid-engagement
-- **Routes models by cognitive demand**: Opus for judgment calls, Sonnet for execution, Haiku for housekeeping
+`prior-art-survey` dispatches **three parallel scouts** before any implementation begins:
+
+| Scout | What it searches | Why it matters |
+|-------|-----------------|----------------|
+| OSS scout | GitHub, package registries, known open-source projects | Finds existing solutions you could adopt or adapt instead of building |
+| Library scout | Language-specific ecosystems (npm, PyPI, etc.) | Finds packages that solve the problem — or 80% of it |
+| Patterns scout | Established architectural and design patterns | Ensures the approach fits recognized patterns, not just intuition |
+
+The output isn't just research — it becomes the "what else did you consider" section of the stakeholder pack, and it's the primary defense against the classic enterprise objection: *"did you look at X before building this?"*
+
+### Token optimization and the second brain
+
+Anthropic is tightening usage limits, and burning Opus credits on mechanical work is a real cost. j-stack addresses this at two levels.
+
+**Model routing by cognitive demand** is the first defense. Every skill has an explicit model directive:
+
+- **Opus** — judgment calls only: scoping, security reasoning, cross-model synthesis, stakeholder framing
+- **Sonnet** — execution work: implementation, audits, UI conversion, code review
+- **Haiku** — mechanical operations: templating, summarizing, file locking
+
+The result: a full pipeline run spends Opus tokens where they move the needle and Haiku tokens on everything else.
+
+**The `.planning/` wiki is the second defense** — and the emergency bailout. This is the same concept Andrej Karpathy describes with his Obsidian second brain: a persistent, structured external memory that outlives any single session or tool. Every decision, artifact, and handoff is written to markdown files in `.planning/`. The wiki is readable by every major AI tool through its own schema file:
+
+| File | Read by |
+|------|---------|
+| `.planning/CLAUDE.md` | Claude Code |
+| `.planning/AGENTS.md` | Codex CLI |
+| `.planning/.cursor/rules` | Cursor |
+| `.planning/chatgpt-brief.md` | ChatGPT (paste-in) |
+
+When Anthropic limits hit mid-engagement — and they will — running `handoff-snapshot` writes a continuation prompt to `.planning/handoffs/`. Paste it into Codex, Cursor, or ChatGPT and the session resumes from exactly where it stopped. No context lost, no re-explanation, no starting over.
+
+### What j-stack assembles
+
+- **Superpowers** — agentic coding discipline (planning, TDD, worktrees, verification)
+- **11 cherry-picked gstack skills** — frontend scoping, UI work, security, QA, docs, safety rails
+- **prior-art-survey** — three parallel research scouts before any build begins
+- **4 custom skills** — wiki bootstrapping, cross-tool handoff, cross-vendor review, stakeholder defense pack
+- **Model routing** — explicit Opus/Sonnet/Haiku directives on every skill
+- **`.planning/` second brain** — persistent cross-tool memory with emergency bailout
 
 ### Spec-driven development and TDD by default
 
