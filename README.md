@@ -6,20 +6,22 @@ A Claude Code configuration for agentic product development — from problem def
 
 ---
 
-## Agentic Product Development
+## What this is and where it came from
 
-Most teams use AI coding tools as sophisticated autocomplete. j-stack uses AI agents to run the *entire* product development lifecycle — from "are we solving the right problem?" through a security-reviewed, cross-vendor-validated, stakeholder-ready deliverable.
+The goal was specific: **encode agentic coding best practices into the early phases of product development** — the discovery, scoping, prior art, and planning work that happens before a line of code runs. These phases are where AI agents cause the most damage when left undisciplined. They build the wrong thing confidently, reinvent existing solutions enthusiastically, and skip the "is this the right problem?" question entirely.
 
-The insight is simple: **AI agents are powerful but undisciplined.** Left unconstrained, they drift off-spec, reinvent existing solutions, skip tests, and produce code nobody can defend in a meeting. The value isn't the models — it's the process discipline imposed on them.
+The approach was to not build this from scratch. Before writing anything, the right move was to research what already existed — and that research is exactly what the `prior-art-survey` skill in this stack does. Practicing what we preach.
 
-j-stack encodes that discipline as skills that run automatically:
+That survey found two projects already doing the hard parts better than a greenfield build would:
 
-- **Before a line of code is written** — the problem is reframed through a founder/10x lens, the approach is pressure-tested, prior art is researched across OSS/libraries/patterns, and a full implementation spec is locked and reviewed by the most capable model
-- **During build** — TDD enforces red-green-refactor, subagents work in isolated git worktrees against the locked spec, verification happens before anything is marked done
-- **After build** — QA audits against the spec, a Chief Security Officer agent runs OWASP/STRIDE analysis, and OpenAI Codex independently reviews Claude's output — convergent findings from two AI vendors are the strongest signal an enterprise stakeholder can get
-- **Throughout** — every decision is written to a persistent markdown wiki readable by every major AI tool, so hitting Anthropic usage limits mid-engagement is a clean handoff, not a loss
+- **[Superpowers](https://github.com/obra/superpowers)** by [@obra](https://github.com/obra) — agentic coding discipline encoded as Claude Code skills: structured brainstorming, spec-locked planning, TDD enforcement, parallel subagents in isolated worktrees, verification before completion. The answer to every known agentic anti-pattern.
+- **[gstack](https://github.com/garrytan/gstack)** by [@garrytan](https://github.com/garrytan) — a 40+ skill community pack covering the gaps Superpowers doesn't: founder-lens scoping, UI design workflow, security review, QA, and cross-tool handoff.
 
-The result: PoC artifacts that are spec-driven, TDD-built, security-reviewed, prior-art-researched, and cross-vendor-validated. Deliverables that answer stakeholder questions before they're asked. A process that runs the same way every time.
+j-stack is an integration layer on top of these two foundations. It doesn't replace them — it cherry-picks the right skills from each, adds four custom skills that fill remaining gaps (prior art research, cross-vendor review, stakeholder packaging, session continuity), wires them into a coherent pipeline, and configures the session behavior so the whole thing runs without manual orchestration.
+
+The insight both projects share: **AI agents are powerful but undisciplined.** The value isn't the models — it's the process imposed on them. j-stack applies that principle earlier in the lifecycle than either project does alone, covering the full arc from "are we solving the right problem?" through a security-reviewed, cross-vendor-validated, stakeholder-ready deliverable.
+
+**Credit where it's due:** the core discipline in this stack belongs to @obra and @garrytan. j-stack is configuration, integration, and the early-phase additions on top of their work.
 
 ---
 
