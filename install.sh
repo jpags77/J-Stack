@@ -633,17 +633,37 @@ Read these files in order:
 2. `.planning/log.md` — last 15 entries. Extract: what happened last session, any open decisions or blockers.
 3. `.planning/handoffs/` — most recent file if any. Extract: next steps, continuation prompt.
 
-### 3. Build orientation summary
+### 3. Detect engagement type
+
+Check whether this is a greenfield project or an existing codebase:
+- **Greenfield:** no source files beyond scaffolding, or `.planning/index.md` says "new project"
+- **Existing repo:** source files present, git history exists, or `.planning/index.md` describes ongoing work
+
+If this is the **first session on an existing repo** (wiki just created by poc-wiki-init, or `## Current State` shows iteration 1 / phase "Not started"), ask these scoping questions before orientation:
+
+**Existing repo intake questions:**
+1. "What's the goal for this engagement? (e.g. add a feature, fix bugs, refactor, security hardening, migrate, improve performance, other)"
+2. "Are there constraints I should know about? (e.g. must not break X, specific tech stack, deadline, can't change the API)"
+3. "What does 'done' look like — how will you know this engagement was successful?"
+4. "Is there existing documentation, a spec, or prior decisions I should read first?"
+
+Record answers in `.planning/index.md` under a `## Engagement Context` section. These answers shape how every phase runs — they are not optional.
+
+Skip these questions if the wiki already has an `## Engagement Context` section with answers.
+
+### 4. Build orientation summary
 
 From what you read, construct:
 - **Iteration:** N (or "1 / first session" if no prior sessions)
+- **Engagement type:** greenfield or existing repo
+- **Goal:** [from engagement context or "not set"]
 - **Last phase completed:** [phase name or "none"]
 - **Currently in phase:** [phase name or "starting fresh"]
 - **Fidelity target:** [working PoC / polished demo / MVP / not set]
 - **Last session summary:** 1–2 sentences from log.md
 - **Open items:** unresolved decisions or blockers from last session
 
-### 4. Ask three questions
+### 5. Ask three questions
 
 Present the orientation summary, then ask:
 
@@ -675,7 +695,7 @@ Record or confirm the answer in `.planning/index.md` under `## Current State`.
 
 Take their answer as the declared session goal. Record it in log.md.
 
-### 5. Handle scope changes
+### 6. Handle scope changes
 
 If Q1 revealed a scope change:
 
@@ -693,12 +713,12 @@ If Q1 revealed a scope change:
 
 4. Tell the user: "Iteration bumped to N+1. Re-entering [phase]. Existing plan archived as v[N]."
 
-### 6. Record session start in log
+### 7. Record session start in log
 
 Append to `.planning/log.md`:
 `## [timestamp] session-start | iteration [N] | phase: [current phase] | goal: [session goal]`
 
-### 7. Output orientation brief and dispatch
+### 8. Output orientation brief and dispatch
 
 Present a clean summary:
 

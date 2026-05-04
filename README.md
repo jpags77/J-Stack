@@ -151,6 +151,65 @@ EXPAND → REFINE → SURVEY → PLAN → BUILD → POLISH → DEFEND → HANDOF
 | **Defend** | `second-opinion`, `stakeholder-pack` | Codex independently reviews Claude's output. Findings synthesized. Stakeholder pack assembled. |
 | **Handoff** | `/document-release`, `handoff-snapshot` | Docs generated from diff. Wiki snapshot written for cross-tool resumption. |
 
+### Complete skill flow
+
+Every session enters through `session-start`, which reads wiki state and dispatches to the correct phase automatically.
+
+```
+session-start  [custom · sonnet]  ← fires automatically at session start (hook)
+│
+├── if no .planning/ wiki → poc-wiki-init  [custom · haiku]
+│     ├── asks fidelity target (working PoC / polished demo / MVP)
+│     └── if existing repo: asks goal, constraints, definition of done
+│
+├── orients: iteration / phase / fidelity / engagement goal
+│
+└── dispatches to current phase ↓
+
+EXPAND
+  /office-hours       [gstack · opus]   ← YC-style problem reframe
+  /plan-ceo-review    [gstack · opus]   ← CEO/founder scope challenge
+
+REFINE
+  superpowers:brainstorming  [superpowers · opus]
+
+SURVEY
+  prior-art-survey    [custom · opus]
+  ├── prior-art-oss-scout      [custom · sonnet]  ← parallel
+  ├── prior-art-library-scout  [custom · sonnet]  ← parallel
+  └── prior-art-patterns-scout [custom · sonnet]  ← parallel
+
+PLAN
+  superpowers:writing-plans  [superpowers · opus]
+
+BUILD
+  superpowers:subagent-driven-development  [superpowers · sonnet]
+  ├── superpowers:using-git-worktrees          ← isolated branch per subagent
+  ├── superpowers:test-driven-development      ← red-green-refactor enforced
+  ├── superpowers:verification-before-completion ← gates done claims
+  └── superpowers:systematic-debugging         ← invoked when stuck
+  /design-shotgun  [gstack · sonnet]  ← UI: explore directions
+  /design-html     [gstack · sonnet]  ← UI: execute direction
+
+POLISH  (session-start checks log.md and dispatches to first pending)
+  /qa             [gstack · sonnet]
+  /design-review  [gstack · sonnet]
+  /cso            [gstack · opus]
+
+DEFEND
+  second-opinion   [custom · opus]
+  └── /codex  [gstack · sonnet]  ← shells out to OpenAI Codex CLI
+  stakeholder-pack [custom · opus]
+
+HANDOFF
+  /document-release  [gstack · sonnet]
+  handoff-snapshot   [custom · haiku]  ← also fires when switching tools
+
+SAFETY / ON-DEMAND
+  /freeze  [gstack · haiku]
+  /guard   [gstack · haiku]
+```
+
 ### SDLC coverage — the discovery-to-demo arc
 
 j-stack covers the **discovery → demo arc** of the SDLC. What's deliberately out of scope is the production-ops side — deployment, monitoring, incident response — because PoC mission ≠ production mission.
@@ -209,28 +268,40 @@ bash install.sh --skip-verify   # skip post-install verification
 
 The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/` with model directives injected, installs the 5 custom skills, writes the project `CLAUDE.md` lane configuration, and creates a global `~/.claude/CLAUDE.md` that makes j-stack the session authority in every project.
 
-### Starting a new PoC
+### Starting a new PoC or improving an existing repo
 
+`session-start` fires automatically at session start (configured as a hook by `install.sh`). You don't run it manually.
+
+**First session on a new project:**
 ```
-First time on a project:
 1. Open Claude Code in your project directory
-2. session-start              ← orient (runs poc-wiki-init if wiki absent)
-3. /office-hours              ← founder-lens reframe
-4. /superpowers:brainstorm    ← pressure-test the vision
-5. prior-art-survey           ← parallel prior-art research
-6. writing-plans              ← lock the implementation spec
-7. subagent-driven-dev        ← build with TDD
-8. /qa + /cso                 ← polish and security review
-9. second-opinion             ← cross-vendor validation
-10. stakeholder-pack          ← assemble the deliverable
-11. /document-release         ← generate docs from diff
-
-Every subsequent session:
-1. session-start              ← confirm iteration, fidelity, phase, session goal
-2. Continue from where you left off
+2. session-start fires automatically
+   ├── bootstraps .planning/ wiki (asks fidelity target)
+   └── dispatches to /office-hours to begin EXPAND
+3. Pipeline runs phase by phase from there
 ```
 
-**Iterative development:** If stakeholder feedback changes scope mid-engagement, `session-start` handles it — bumps the iteration, identifies which phase to re-enter, and archives the prior plan. You don't restart the pipeline; you re-enter at the right phase with the new input.
+**First session on an existing repo:**
+```
+1. Open Claude Code in the repo
+2. session-start fires automatically
+   ├── bootstraps .planning/ wiki
+   ├── asks: goal, constraints, definition of done, prior docs
+   └── dispatches to the right phase based on your answers
+      (new feature → EXPAND, known spec → PLAN, bug fixes → BUILD, etc.)
+```
+
+**Every subsequent session:**
+```
+1. session-start fires automatically
+   ├── reads wiki: iteration / phase / fidelity / open items
+   ├── confirms scope: "anything changed since last session?"
+   ├── confirms fidelity target
+   ├── asks session goal
+   └── dispatches to current phase
+```
+
+**Iterative development:** Scope changes mid-engagement bump the iteration, identify which phase to re-enter, and archive the prior plan. You don't restart the pipeline; you re-enter at the right phase with the new input.
 
 ### What's NOT installed — and why
 
