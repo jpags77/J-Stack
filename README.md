@@ -15,13 +15,14 @@ The approach was to not build this from scratch. Before writing anything, the ri
 That survey found two projects already doing the hard parts better than a greenfield build would:
 
 - **[Superpowers](https://github.com/obra/superpowers)** by [@obra](https://github.com/obra) — agentic coding discipline encoded as Claude Code skills: structured brainstorming, spec-locked planning, TDD enforcement, parallel subagents in isolated worktrees, verification before completion. The answer to every known agentic anti-pattern.
-- **[gstack](https://github.com/garrytan/gstack)** by [@garrytan](https://github.com/garrytan) — a 40+ skill community pack covering the gaps Superpowers doesn't: founder-lens scoping, UI design workflow, security review, QA, and cross-tool handoff.
+- **[gstack](https://github.com/garrytan/gstack)** by [@garrytan](https://github.com/garrytan) — a 40+ skill community pack covering the gaps Superpowers doesn't: founder-lens scoping, UI design workflow, security review, and QA.
+- **[Andrej Karpathy](https://karpathy.ai)**'s second brain concept — the idea of a persistent, structured markdown wiki that outlives any single session or tool. Every decision, artifact, and handoff is written to `.planning/`. When AI usage limits force a tool switch mid-engagement, the new tool reads the wiki and resumes without re-explanation. The wiki speaks every tool's native language (CLAUDE.md, AGENTS.md, .cursor/rules, chatgpt-brief.md). This is the memory layer that makes the whole stack resilient.
 
-j-stack is an integration layer on top of these two foundations. It doesn't replace them — it cherry-picks the right skills from each, adds four custom skills that fill remaining gaps (prior art research, cross-vendor review, stakeholder packaging, session continuity), wires them into a coherent pipeline, and configures the session behavior so the whole thing runs without manual orchestration.
+j-stack is an integration layer on top of these foundations. It doesn't replace them — it cherry-picks the right skills from each, adds five custom skills that fill remaining gaps (prior art research, cross-vendor review, stakeholder packaging, session orientation, and the wiki itself), wires them into a coherent pipeline, and configures session behavior so the whole thing runs without manual orchestration.
 
-The insight both projects share: **AI agents are powerful but undisciplined.** The value isn't the models — it's the process imposed on them. j-stack applies that principle earlier in the lifecycle than either project does alone, covering the full arc from "are we solving the right problem?" through a security-reviewed, cross-vendor-validated, stakeholder-ready deliverable.
+The insight Superpowers and gstack share: **AI agents are powerful but undisciplined.** The value isn't the models — it's the process imposed on them. j-stack applies that principle earlier in the lifecycle than either project does alone, covering the full arc from "are we solving the right problem?" through a security-reviewed, cross-vendor-validated, stakeholder-ready deliverable.
 
-**Credit where it's due:** the core discipline in this stack belongs to @obra and @garrytan. j-stack is configuration, integration, and the early-phase additions on top of their work.
+**Credit where it's due:** the core coding discipline belongs to @obra and @garrytan. The wiki architecture belongs to Karpathy. j-stack is configuration, integration, and the early-phase additions on top of their work.
 
 ---
 
