@@ -623,7 +623,7 @@ Run at the start of every development session — before any coding, design, or 
 
 Look for `.planning/` in the project root.
 
-- If absent: tell the user "This project doesn't have a .planning/ wiki yet. Run `poc-wiki-init` to bootstrap it, then start a fresh session." Stop here.
+- If absent: invoke `poc-wiki-init` now — do not stop, do not ask the user to run it separately. poc-wiki-init is idempotent and will ask the fidelity question and create the wiki structure. After it completes, continue with step 2.
 - If present: proceed.
 
 ### 2. Read current state
@@ -698,7 +698,7 @@ If Q1 revealed a scope change:
 Append to `.planning/log.md`:
 `## [timestamp] session-start | iteration [N] | phase: [current phase] | goal: [session goal]`
 
-### 7. Output orientation brief
+### 7. Output orientation brief and dispatch
 
 Present a clean summary:
 
@@ -715,7 +715,28 @@ This session: [session goal]
 ───────────────────────────────────────────
 ```
 
-Then proceed to the appropriate phase skill without waiting for further instruction.
+Then immediately dispatch to the correct skill based on current phase — do not wait for further instruction:
+
+| Current phase | Dispatch to |
+|---------------|------------|
+| Not started / EXPAND | Invoke `/office-hours` |
+| EXPAND (office-hours done, ceo-review pending) | Invoke `/plan-ceo-review` |
+| REFINE | Invoke `superpowers:brainstorming` |
+| SURVEY | Invoke `prior-art-survey` |
+| PLAN | Invoke `superpowers:writing-plans` |
+| BUILD | Invoke `superpowers:subagent-driven-development` |
+| BUILD — UI work in progress | Invoke `/design-shotgun` or `/design-html` depending on whether directions are locked |
+| POLISH — code review pending | Invoke `/qa` |
+| POLISH — security pending | Invoke `/cso` |
+| POLISH — design review pending | Invoke `/design-review` |
+| DEFEND — cross-vendor review pending | Invoke `second-opinion` |
+| DEFEND — stakeholder pack pending | Invoke `stakeholder-pack` |
+| HANDOFF — docs pending | Invoke `/document-release` |
+| HANDOFF — switching tools | Invoke `handoff-snapshot` |
+
+If the current phase has multiple sub-steps (e.g., POLISH has qa + cso + design-review), check `index.md` and `log.md` to determine which have already run, then dispatch to the first pending one.
+
+If the phase is ambiguous or the session goal implies re-entering a different phase than recorded, confirm with the user before dispatching.
 SKILL_EOF
 
 # ─── Phase 2.5: Prior-art research skills ─────────────────────────────────────
