@@ -95,11 +95,12 @@ The output isn't just research — it becomes the "what else did you consider" s
 
 ---
 
-### Four custom skills — what doesn't exist anywhere else
+### Five custom skills — what doesn't exist anywhere else
 
 | Skill | What it does |
 |-------|-------------|
-| `poc-wiki-init` | Bootstraps the `.planning/` wiki at project start. Generates schema files for Claude Code, Codex, Cursor, and ChatGPT. Idempotent — safe to run again. |
+| `session-start` | Session orientation ritual. Run at the start of every session — reads wiki state, confirms fidelity target, surfaces scope changes, handles iteration bumps, and declares the session goal before any work begins. Prevents silent drift between sessions. |
+| `poc-wiki-init` | Bootstraps the `.planning/` wiki at project start. Asks the fidelity target question upfront, generates schema files for Claude Code, Codex, Cursor, and ChatGPT. Idempotent — safe to run again. |
 | `handoff-snapshot` | Writes a timestamped snapshot to `.planning/handoffs/` with context, decisions, next steps, and a paste-ready continuation prompt for the next tool. |
 | `second-opinion` | Dispatches an artifact to Codex CLI for independent review, then synthesizes a convergence/divergence matrix. Two AI vendors reviewing the same artifact independently. |
 | `stakeholder-pack` | Aggregates vision, prior-art, security, and cross-model review outputs into a single executive-ready document. Pre-answers the five standard enterprise PoC questions. |
@@ -206,13 +207,14 @@ bash install.sh --skip-codex    # skip Codex CLI check (if not using second-opin
 bash install.sh --skip-verify   # skip post-install verification
 ```
 
-The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/` with model directives injected, installs the 4 custom skills, and writes the `CLAUDE.md` lane configuration.
+The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/` with model directives injected, installs the 5 custom skills, writes the project `CLAUDE.md` lane configuration, and creates a global `~/.claude/CLAUDE.md` that makes j-stack the session authority in every project.
 
 ### Starting a new PoC
 
 ```
+First time on a project:
 1. Open Claude Code in your project directory
-2. /poc-wiki-init             ← bootstrap .planning/ wiki
+2. session-start              ← orient (runs poc-wiki-init if wiki absent)
 3. /office-hours              ← founder-lens reframe
 4. /superpowers:brainstorm    ← pressure-test the vision
 5. prior-art-survey           ← parallel prior-art research
@@ -222,7 +224,13 @@ The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/
 9. second-opinion             ← cross-vendor validation
 10. stakeholder-pack          ← assemble the deliverable
 11. /document-release         ← generate docs from diff
+
+Every subsequent session:
+1. session-start              ← confirm iteration, fidelity, phase, session goal
+2. Continue from where you left off
 ```
+
+**Iterative development:** If stakeholder feedback changes scope mid-engagement, `session-start` handles it — bumps the iteration, identifies which phase to re-enter, and archives the prior plan. You don't restart the pipeline; you re-enter at the right phase with the new input.
 
 ### What's NOT installed — and why
 

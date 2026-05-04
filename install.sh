@@ -173,7 +173,18 @@ Check whether `.planning/` exists in the project root:
 - If it does not: proceed to step 2.
 - If it does: read `index.md`, summarize current state to the user, and exit. Do not modify.
 
-### 2. Create directory structure
+### 2. Capture fidelity target
+
+Before creating any files, ask:
+
+"What level of functionality are we targeting for this engagement?
+  A) Working PoC — functional core logic, real integrations, key edge cases handled, something that can be built upon
+  B) Polished demo — looks great and works on the happy path, mocked data acceptable
+  C) MVP — production-ready enough to put in front of real users"
+
+Record the answer. It will be written into `index.md` in step 4. This answer governs how every phase is executed — it is not cosmetic.
+
+### 3. Create directory structure
 
 ```
 .planning/
@@ -193,7 +204,7 @@ Check whether `.planning/` exists in the project root:
 └── raw/
 ```
 
-### 3. Generate stub files
+### 4. Generate stub files
 
 **index.md** — content-oriented catalog. Initial content:
 
@@ -201,6 +212,13 @@ Check whether `.planning/` exists in the project root:
 # Wiki Index
 
 One-line summary of every page in this wiki. Update on every page creation.
+
+## Current State
+
+**Iteration:** 1
+**Phase:** Not started — run session-start at the beginning of each session
+**Fidelity target:** [answer from fidelity question above — A/B/C and description]
+**Last updated:** [current ISO timestamp]
 
 ## vision/
 (empty — populate after /office-hours)
@@ -304,21 +322,21 @@ This project lives in a markdown wiki under .planning/. The relevant pages are:
 When I ask you about this project, I will paste relevant pages from .planning/ into the conversation. Your job is to reason about them and produce output I can file back into the wiki.
 ```
 
-### 4. Initialize git
+### 5. Initialize git
 
 If the project is not already a git repo, run `git init` and add `.planning/` to be tracked. If it is, just `git add .planning/` and commit with message `wiki: bootstrap .planning/ structure`.
 
-### 5. Optional remote
+### 6. Optional remote
 
 Ask the user whether they want to push the wiki to a private remote for cross-machine portability. If yes, prompt for the remote URL, configure it, and push. If no, skip — they can add it later.
 
-### 6. Update log.md
+### 7. Update log.md
 
 Append: `## [<timestamp>] init | wiki bootstrapped`
 
 ## Output
 
-Confirm to the user: "Wiki bootstrapped at .planning/. Schema files in place for Claude Code, Codex, Cursor, and ChatGPT. Run /office-hours next to start the founder-lens reframe."
+Confirm to the user: "Wiki bootstrapped at .planning/. Schema files in place for Claude Code, Codex, Cursor, and ChatGPT. Run session-start at the beginning of each session, then /office-hours to start the founder-lens reframe."
 SKILL_EOF
 
 # 2.2 handoff-snapshot
@@ -585,6 +603,121 @@ Confirm path. Note: for executive consumption, pipe through markdown-to-PDF or p
 - **Hiding gaps.** The production-gap section is critical. Naming gaps explicitly increases credibility.
 SKILL_EOF
 
+# 2.5 session-start
+install_skill "session-start" <<'SKILL_EOF'
+---
+name: session-start
+description: Session orientation ritual for iterative development. Run at the start of every working session before any coding, design, or planning begins. Reads wiki state, identifies current iteration and phase, confirms fidelity target, surfaces scope changes since last session, and outputs a clear orientation brief. Prevents silent defaulting to wrong assumptions about what we're building and how complete it should be.
+model: sonnet
+---
+
+# session-start
+
+## When to activate
+
+Run at the start of every development session — before any coding, design, or planning work begins. Also run when returning to a project after a gap, or when a stakeholder has provided new feedback between sessions.
+
+## Process
+
+### 1. Check wiki exists
+
+Look for `.planning/` in the project root.
+
+- If absent: tell the user "This project doesn't have a .planning/ wiki yet. Run `poc-wiki-init` to bootstrap it, then start a fresh session." Stop here.
+- If present: proceed.
+
+### 2. Read current state
+
+Read these files in order:
+1. `.planning/index.md` — full file. Extract: current iteration, current phase, fidelity level, what's been completed.
+2. `.planning/log.md` — last 15 entries. Extract: what happened last session, any open decisions or blockers.
+3. `.planning/handoffs/` — most recent file if any. Extract: next steps, continuation prompt.
+
+### 3. Build orientation summary
+
+From what you read, construct:
+- **Iteration:** N (or "1 / first session" if no prior sessions)
+- **Last phase completed:** [phase name or "none"]
+- **Currently in phase:** [phase name or "starting fresh"]
+- **Fidelity target:** [working PoC / polished demo / MVP / not set]
+- **Last session summary:** 1–2 sentences from log.md
+- **Open items:** unresolved decisions or blockers from last session
+
+### 4. Ask three questions
+
+Present the orientation summary, then ask:
+
+**Q1 — Scope or direction change?**
+"Is there new feedback, stakeholder input, or scope change since last session?"
+
+- If yes: ask them to describe it. Identify which phase the change requires re-entering:
+  - Core problem changed → re-enter EXPAND
+  - Approach or spec changed → re-enter PLAN
+  - Feature scope changed mid-build → re-enter BUILD
+  - UI direction changed → re-enter POLISH
+- If no: continue to Q2.
+
+**Q2 — Fidelity confirmation**
+
+If a fidelity level is already recorded in the wiki:
+"We're targeting [level]. Still correct?"
+
+If no fidelity level is recorded:
+"What level of functionality are we targeting this engagement?
+  A) Working PoC — functional core logic, real integrations, key edge cases handled, something that can be built upon
+  B) Polished demo — looks great and works on the happy path, mocked data acceptable
+  C) MVP — production-ready enough to put in front of real users"
+
+Record or confirm the answer in `.planning/index.md` under `## Current State`.
+
+**Q3 — Session goal**
+"What do we want to accomplish this session?"
+
+Take their answer as the declared session goal. Record it in log.md.
+
+### 5. Handle scope changes
+
+If Q1 revealed a scope change:
+
+1. Append to `.planning/log.md`:
+   `## [timestamp] change | iteration N→N+1 | [one-line reason for change]`
+
+2. Update `## Current State` in `index.md`:
+   - Bump iteration number
+   - Set current phase to the re-entry point identified in Q1
+
+3. If the change affects the spec or plan:
+   - Rename existing plan file to archive it (e.g., `plans/v1-spec.md` stays as-is — never delete)
+   - Note that a new `plans/vN+1-spec.md` should be written when PLAN phase re-runs
+   - Do not attempt to create the new plan file now — that belongs to `superpowers:writing-plans`
+
+4. Tell the user: "Iteration bumped to N+1. Re-entering [phase]. Existing plan archived as v[N]."
+
+### 6. Record session start in log
+
+Append to `.planning/log.md`:
+`## [timestamp] session-start | iteration [N] | phase: [current phase] | goal: [session goal]`
+
+### 7. Output orientation brief
+
+Present a clean summary:
+
+```
+SESSION ORIENTATION
+───────────────────────────────────────────
+Iteration : [N]
+Phase     : [current phase]
+Fidelity  : [level]
+Last session: [1-sentence summary or "first session"]
+This session: [session goal]
+[If scope changed]: Scope change recorded — re-entering [phase], prior plan archived as v[N].
+[If wiki sections empty]: Wiki sections unpopulated — skills should file output to .planning/ as work progresses.
+───────────────────────────────────────────
+```
+
+Then proceed to the appropriate phase skill without waiting for further instruction.
+SKILL_EOF
+
 # ─── Phase 2.5: Prior-art research skills ─────────────────────────────────────
 
 info "Phase 2.5 — Installing prior-art research skills…"
@@ -643,6 +776,75 @@ else
   info "  Created CLAUDE.md with stack ownership section"
 fi
 
+# ─── Phase 3.5: Global CLAUDE.md ──────────────────────────────────────────────
+
+info "Phase 3.5 — Configuring global ~/.claude/CLAUDE.md…"
+
+GLOBAL_CLAUDE="${HOME}/.claude/CLAUDE.md"
+GLOBAL_CLAUDE_SECTION='
+## Session authority: j-stack governs
+
+j-stack is the single system governing all product development sessions. Superpowers skills
+are available as subcomponents and are invoked by j-stack'"'"'s phase ordering below. Do NOT
+let `superpowers:using-superpowers` drive session behavior — j-stack'"'"'s phase ordering
+takes precedence per Superpowers'"'"' own instruction-priority rules.
+
+---
+
+## Session start ritual
+
+At the beginning of every development session — before any coding, planning, or design work —
+invoke the `session-start` skill. It reads wiki state, confirms the fidelity target, surfaces
+scope changes, and declares the session goal. Skip it only for pure Q&A or one-off lookups
+that produce no artifacts.
+
+If the project has no `.planning/` wiki yet, run `poc-wiki-init` first.
+
+---
+
+## j-stack phase pipeline
+
+For any product, PoC, or feature development work, follow this pipeline in order:
+
+EXPAND → REFINE → SURVEY → PLAN → BUILD → POLISH → DEFEND → HANDOFF
+
+| Phase | Skills to invoke |
+|-------|-----------------|
+| Expand | /office-hours, /plan-ceo-review |
+| Refine | superpowers:brainstorming |
+| Survey | prior-art-survey |
+| Plan | superpowers:writing-plans |
+| Build | superpowers:subagent-driven-development, /design-shotgun, /design-html |
+| Polish | /qa, /design-review, /cso |
+| Defend | second-opinion, stakeholder-pack |
+| Handoff | /document-release, handoff-snapshot |
+
+Do NOT use: /autoplan, /plan-eng-review — they conflict with superpowers:writing-plans.
+
+---
+
+## Model routing
+
+| Moment | Model |
+|--------|-------|
+| Judgment (scoping, security, synthesis, stakeholder) | opus |
+| Execution (implementation, audits, UI, code review) | sonnet |
+| Housekeeping (templating, summarizing, wiki writes) | haiku |
+'
+
+mkdir -p "${HOME}/.claude"
+if [ -f "$GLOBAL_CLAUDE" ]; then
+  if grep -q "j-stack governs" "$GLOBAL_CLAUDE"; then
+    info "  Global CLAUDE.md already contains j-stack section — skipping"
+  else
+    printf '\n# Global Claude Code Configuration\n%s' "$GLOBAL_CLAUDE_SECTION" >> "$GLOBAL_CLAUDE"
+    info "  Appended j-stack section to existing ~/.claude/CLAUDE.md"
+  fi
+else
+  printf '# Global Claude Code Configuration\n%s' "$GLOBAL_CLAUDE_SECTION" > "$GLOBAL_CLAUDE"
+  info "  Created ~/.claude/CLAUDE.md with j-stack configuration"
+fi
+
 # ─── Phase 4: Verification ────────────────────────────────────────────────────
 
 if [ "$SKIP_VERIFY" = false ]; then
@@ -651,7 +853,7 @@ if [ "$SKIP_VERIFY" = false ]; then
   all_ok=true
 
   # Check all skills exist
-  ALL_SKILLS=("${GSTACK_SKILLS[@]}" poc-wiki-init handoff-snapshot second-opinion stakeholder-pack "${PRIOR_ART_SKILLS[@]}")
+  ALL_SKILLS=("${GSTACK_SKILLS[@]}" poc-wiki-init handoff-snapshot second-opinion stakeholder-pack session-start "${PRIOR_ART_SKILLS[@]}")
   for skill in "${ALL_SKILLS[@]}"; do
     if [ -d "${SKILLS_DIR}/${skill}" ]; then
       info "  ✓ ${skill}"
@@ -685,9 +887,10 @@ echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━
 echo ""
 echo "Next steps:"
 echo "  1. Open a new Claude Code session in your project directory"
-echo "  2. Run: /poc-wiki-init  (bootstraps .planning/ wiki)"
-echo "  3. Run: /office-hours   (founder-lens scoping)"
-echo "  4. Follow the pipeline in CLAUDE.md"
+echo "  2. Run: session-start    (orient — or poc-wiki-init if first time on this project)"
+echo "  3. Run: /office-hours    (founder-lens scoping)"
+echo "  4. Follow the pipeline in ~/.claude/CLAUDE.md"
 echo ""
-echo "Pipeline: EXPAND → REFINE → SURVEY → PLAN → BUILD → POLISH → DEFEND → HANDOFF"
+echo "Each session: session-start → confirm fidelity → confirm phase → do work → handoff-snapshot (if switching tools)"
+echo "Pipeline:     EXPAND → REFINE → SURVEY → PLAN → BUILD → POLISH → DEFEND → HANDOFF"
 echo ""
