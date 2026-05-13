@@ -190,11 +190,15 @@ Record the answer. It will be written into `index.md` in step 4. This answer gov
 .planning/
 ├── index.md
 ├── log.md
+├── backlog.md
 ├── CLAUDE.md
 ├── AGENTS.md
 ├── .cursor/
 │   └── rules
 ├── chatgpt-brief.md
+├── state/
+│   ├── project-state.yml
+│   └── active-constraints.md
 ├── vision/
 ├── prior-art/
 ├── plans/
@@ -216,7 +220,7 @@ One-line summary of every page in this wiki. Update on every page creation.
 ## Current State
 
 **Iteration:** 1
-**Phase:** Not started — run session-start at the beginning of each session
+**Phase:** See `.planning/state/project-state.yml` (authoritative) — current: discovery
 **Fidelity target:** [answer from fidelity question above — A/B/C and description]
 **Last updated:** [current ISO timestamp]
 
@@ -256,11 +260,22 @@ Append-only. Format: ## [YYYY-MM-DD HH:MM] <operation> | <subject>
 
 This project uses a markdown wiki at .planning/ as its single source of truth.
 
+## Runtime state (read this first)
+
+`.planning/state/project-state.yml` is the authoritative operational source of truth. Read it before any non-trivial work. It defines:
+- Current phase (do not infer from conversation — use the file)
+- Allowed and blocked work
+- Active constraints
+- Current goal
+
+If you are mid-session and resuming after a context refresh, re-read `project-state.yml` before continuing. Do not rely on what you remember from earlier in the conversation.
+
 ## Before any non-trivial work
 
-1. Read .planning/index.md to understand existing state.
-2. Read .planning/log.md to see recent activity.
-3. Check .planning/handoffs/ for the most recent snapshot if one exists — another tool may have left state for you.
+1. Read .planning/state/project-state.yml — phase, allowed work, active constraints.
+2. Read .planning/index.md — iteration, fidelity level, what's been completed.
+3. Read .planning/log.md — last 15 entries for recent activity.
+4. Check .planning/handoffs/ for the most recent snapshot if one exists — another tool may have left state for you.
 
 ## Stack ownership (avoid skill conflicts)
 
@@ -271,6 +286,8 @@ This project uses a markdown wiki at .planning/ as its single source of truth.
 ## Wiki maintenance
 
 When you produce notable output (a decision, a comparison, an analysis), file it back into the wiki as a new page and update index.md. The wiki compounds rather than just accumulates.
+
+After any significant change, update `state/project-state.yml` last_updated and append to log.md.
 
 When approaching context limits or about to switch tools, run handoff-snapshot.
 ```
@@ -320,6 +337,121 @@ This project lives in a markdown wiki under .planning/. The relevant pages are:
 [List the current contents of .planning/index.md here. The poc-wiki-init skill should populate this dynamically when first run; subsequent updates happen via handoff-snapshot.]
 
 When I ask you about this project, I will paste relevant pages from .planning/ into the conversation. Your job is to reason about them and produce output I can file back into the wiki.
+```
+
+**state/project-state.yml** — authoritative runtime state. Initial content:
+
+```yaml
+project:
+  name: [project directory name]
+  mode: exploratory
+  lifecycle: poc
+
+current_state:
+  phase: discovery
+  focus: initial-orientation
+  confidence: low
+  last_updated: [current ISO timestamp]
+
+active_goal:
+  id: goal-001
+  title: Initial project orientation
+  desired_outcome: Fidelity target confirmed, session goal recorded, dispatch to correct phase
+
+allowed_work:
+  - inspect_existing_files
+  - update_planning_docs
+  - ask_clarifying_questions
+  - run_session_start
+
+blocked_work:
+  - coding_without_approved_plan
+  - architecture_changes_without_decision
+  - deleting_planning_structure
+
+active_constraints:
+  - file_all_output_to_planning_wiki
+  - preserve_markdown_first_design
+  - keep_human_readable
+  - no_silent_phase_changes
+
+required_before_coding:
+  - read state/project-state.yml
+  - confirm phase allows implementation
+  - identify active task in backlog.md
+
+required_after_coding:
+  - update backlog.md task status
+  - append to log.md
+  - update state/project-state.yml last_updated
+```
+
+**state/active-constraints.md** — human-readable constraint registry. Initial content:
+
+```markdown
+# Active Constraints
+
+Constraints in effect for this project. Do not violate without logging a decision in log.md.
+
+## Always active
+
+- All output filed to .planning/ wiki
+- Human-readable, markdown-first artifacts
+- No silent phase changes — log transitions to log.md with reason
+- Re-read state/project-state.yml before significant changes mid-session
+
+## Phase-specific
+
+(populated as work progresses — update when entering a new phase)
+
+## Blocked approaches
+
+(populated after architecture decisions — record what was ruled out and why)
+```
+
+**backlog.md** — state-aware task list. Initial content:
+
+```markdown
+# Backlog
+
+Tasks include phase, entry criteria, and exit criteria. Update status in real time.
+
+## Format
+
+### T-NNN — [title]
+Status: ready | in-progress | blocked | done
+Phase: [phase name]
+Mode: exploratory | cautious | aggressive | debug | polish
+Priority: high | medium | low
+
+Entry criteria:
+- [what must be true before starting]
+
+Constraints:
+- [task-specific constraints]
+
+Exit criteria:
+- [what must be true to call it done]
+
+---
+
+## T-001 — Initial project orientation
+
+Status: ready
+Phase: discovery
+Mode: exploratory
+Priority: high
+
+Entry criteria:
+- Wiki bootstrapped
+
+Constraints:
+- No coding until PLAN phase complete
+
+Exit criteria:
+- /office-hours complete
+- Fidelity target confirmed
+- Session goal recorded in log.md
 ```
 
 ### 5. Initialize git
@@ -391,15 +523,22 @@ Write to `.planning/handoffs/<timestamp>-snapshot.md` with this structure:
 [A paste-ready prompt the user can drop into the next tool. Reference this handoff file by path. Keep under 200 words.]
 ```
 
-### 3. Append to log.md
+### 3. Update project-state.yml
 
-`## [<timestamp>] handoff | <reason: usage_limits / planned_switch / pause>`
+If `.planning/state/project-state.yml` exists:
+- Set `current_state.last_updated` to current timestamp
+- If the phase changed during this session, update `current_state.phase` to reflect where work stopped
+- Do not modify `allowed_work`, `blocked_work`, or `active_constraints` — those require explicit user decision
 
-### 4. Update index.md
+### 4. Append to log.md
+
+`## [<timestamp>] handoff | <reason: usage_limits / planned_switch / pause> | phase: [current phase]`
+
+### 5. Update index.md
 
 Add the new handoff snapshot to the index with one-line summary.
 
-### 5. Output to user
+### 6. Output to user
 
 Show:
 - Path to the snapshot file
@@ -629,9 +768,10 @@ Look for `.planning/` in the project root.
 ### 2. Read current state
 
 Read these files in order:
-1. `.planning/index.md` — full file. Extract: current iteration, current phase, fidelity level, what's been completed.
-2. `.planning/log.md` — last 15 entries. Extract: what happened last session, any open decisions or blockers.
-3. `.planning/handoffs/` — most recent file if any. Extract: next steps, continuation prompt.
+1. `.planning/state/project-state.yml` — if it exists. Extract: phase (authoritative), mode, allowed_work, blocked_work, active_goal, active_constraints. This file overrides any phase inferred from conversation.
+2. `.planning/index.md` — full file. Extract: current iteration, fidelity level, what's been completed.
+3. `.planning/log.md` — last 15 entries. Extract: what happened last session, any open decisions or blockers.
+4. `.planning/handoffs/` — most recent file if any. Extract: next steps, continuation prompt.
 
 ### 3. Detect engagement type
 
@@ -658,8 +798,12 @@ From what you read, construct:
 - **Engagement type:** greenfield or existing repo
 - **Goal:** [from engagement context or "not set"]
 - **Last phase completed:** [phase name or "none"]
-- **Currently in phase:** [phase name or "starting fresh"]
+- **Currently in phase:** [phase from project-state.yml — authoritative]
+- **Mode:** [execution_style from project-state.yml, or "exploratory" if not set]
 - **Fidelity target:** [working PoC / polished demo / MVP / not set]
+- **Allowed work this session:** [allowed_work list from project-state.yml, or "not restricted" if file absent]
+- **Blocked work:** [blocked_work list from project-state.yml if any entries exist]
+- **Active constraints:** [active_constraints from project-state.yml or active-constraints.md]
 - **Last session summary:** 1–2 sentences from log.md
 - **Open items:** unresolved decisions or blockers from last session
 
@@ -713,10 +857,12 @@ If Q1 revealed a scope change:
 
 4. Tell the user: "Iteration bumped to N+1. Re-entering [phase]. Existing plan archived as v[N]."
 
-### 7. Record session start in log
+### 7. Record session start in log and update state
 
 Append to `.planning/log.md`:
 `## [timestamp] session-start | iteration [N] | phase: [current phase] | goal: [session goal]`
+
+If `.planning/state/project-state.yml` exists, update `current_state.last_updated` to the current timestamp and set `active_goal.title` to the session goal from Q3.
 
 ### 8. Output orientation brief and dispatch
 
@@ -726,13 +872,17 @@ Present a clean summary:
 SESSION ORIENTATION
 ───────────────────────────────────────────
 Iteration : [N]
-Phase     : [current phase]
+Phase     : [current phase — from project-state.yml]
+Mode      : [execution_style]
 Fidelity  : [level]
+Allowed   : [allowed_work summary or "unrestricted"]
+Blocked   : [blocked_work summary or "none"]
 Last session: [1-sentence summary or "first session"]
 This session: [session goal]
 [If scope changed]: Scope change recorded — re-entering [phase], prior plan archived as v[N].
 [If wiki sections empty]: Wiki sections unpopulated — skills should file output to .planning/ as work progresses.
 ───────────────────────────────────────────
+NOTE: If you lose context mid-session, re-read .planning/state/project-state.yml before continuing.
 ```
 
 Then immediately dispatch to the correct skill based on current phase — do not wait for further instruction:
@@ -797,7 +947,7 @@ Run them in order. Do NOT use gstack'"'"'s /autoplan or /plan-eng-review — the
 
 ## Wiki
 
-This project'"'"'s source of truth lives at `.planning/`. Read `.planning/index.md` before any non-trivial work. Check `.planning/handoffs/` for the most recent snapshot — another tool may have left state for you to resume from.
+This project'"'"'s source of truth lives at `.planning/`. Read `.planning/state/project-state.yml` first (phase, allowed work, active constraints), then `.planning/index.md`. Check `.planning/handoffs/` for the most recent snapshot — another tool may have left state for you to resume from.
 
 ## Cross-tool
 
@@ -871,6 +1021,18 @@ Do NOT use: /autoplan, /plan-eng-review — they conflict with superpowers:writi
 | Judgment (scoping, security, synthesis, stakeholder) | opus |
 | Execution (implementation, audits, UI, code review) | sonnet |
 | Housekeeping (templating, summarizing, wiki writes) | haiku |
+
+---
+
+## State machine authority
+
+When `.planning/state/project-state.yml` exists in a project, it is the operational source of truth. Rules:
+
+- Read it at session start — before any planning, coding, or design.
+- The `phase` field is authoritative. Do not infer phase from conversation context alone.
+- Respect `allowed_work` and `blocked_work`. If a request requires blocked work, surface the conflict and ask before proceeding.
+- Do not silently change the phase. Log all transitions to `.planning/log.md` with a reason.
+- After significant work, update `current_state.last_updated` in the file.
 '
 
 mkdir -p "${HOME}/.claude"
