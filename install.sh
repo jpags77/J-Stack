@@ -285,15 +285,38 @@ This project uses a markdown wiki at .planning/ as its single source of truth.
 ## Before any work
 
 1. Read .planning/index.md.
-2. Read .planning/handoffs/ for the most recent snapshot — Claude Code or another tool may have left state for you to resume from.
+2. Read .planning/log.md for recent activity.
+3. Read .planning/handoffs/ for the most recent snapshot - Claude Code or another tool may have left state for you to resume from.
 
-## Your role
+## Phase pipeline
+
+EXPAND -> REFINE -> SURVEY -> PLAN -> BUILD -> POLISH -> DEFEND -> HANDOFF
+
+Respect the lane ownership from the root AGENTS.md/CLAUDE.md files. Do not skip ahead to implementation when the wiki says the project is still in an earlier phase.
+
+## Codex operating modes
 
 You are likely being invoked because of one of these reasons:
-- Cross-vendor second-opinion review (via the second-opinion skill in Claude Code).
-- Direct user invocation because Claude usage limits were hit.
+
+- **Fallback mode:** Claude usage limits were hit, or the user deliberately switched tools. Resume from the latest wiki state and continue the current phase.
+- **Review mode:** Claude invoked Codex for cross-vendor `second-opinion` review. Inspect the requested artifact independently and produce findings suitable for `.planning/reviews/`.
 
 In either case, your output should be filed into .planning/ as a new page and logged in log.md.
+
+## Claude skill mapping for Codex
+
+Claude slash commands and skills are process labels. In Codex, map them to equivalent behavior:
+
+| Claude surface | Codex behavior |
+| --- | --- |
+| `/office-hours`, `/plan-ceo-review` | Challenge problem framing, scope, and MVP shape in EXPAND. |
+| `superpowers:brainstorming` | Refine requirements and compare approaches before planning. |
+| `prior-art-survey` | Use the bundled prior-art skill files and current research to make a build/adopt/fork/hybrid recommendation. |
+| `superpowers:writing-plans` | Create or follow the implementation plan before editing code. |
+| `superpowers:subagent-driven-development` | Execute the plan in small, test-driven, isolated changes. |
+| `/qa`, `/design-review`, `/cso` | Verify behavior, UX, and security/risk posture in POLISH. |
+| `second-opinion` | Act as the independent reviewer and write review-ready findings. |
+| `handoff-snapshot` | Write `.planning/handoffs/<timestamp>-snapshot.md` before pausing or switching tools. |
 ```
 
 **.cursor/rules** — schema for Cursor:
@@ -815,6 +838,101 @@ if [ -f "$PROJECT_CLAUDE" ]; then
 else
   printf '# Project Context\n%s' "$CLAUDE_SECTION" > "$PROJECT_CLAUDE"
   info "  Created CLAUDE.md with stack ownership section"
+fi
+
+# ─── Phase 3.25: AGENTS.md configuration ──────────────────────────────────────
+
+info "Phase 3.25 — Configuring project AGENTS.md…"
+
+AGENTS_SECTION='
+## Stack ownership (skill lane management)
+
+Multiple skill packs are installed. Each owns a specific phase of the workflow:
+
+- **Front-end scoping (Expand phase):** /office-hours, /plan-ceo-review (gstack)
+- **Refining (Refine phase):** Superpowers brainstorming
+- **Prior art (Survey phase):** prior-art-survey (custom)
+- **Planning (Plan phase):** Superpowers writing-plans
+- **Building (Build phase):** Superpowers subagent-driven-development, with /design-shotgun + /design-html for UI work
+- **Polishing (Polish phase):** /qa, /design-review, /cso (gstack)
+- **Defending (Defend phase):** second-opinion, stakeholder-pack (custom)
+- **Handoff:** /document-release (gstack), handoff-snapshot (custom)
+
+Run them in order. Do NOT use gstack'"'"'s /autoplan or /plan-eng-review — they overlap Superpowers'"'"' planning lane and create conflicts.
+
+## Wiki
+
+This project'"'"'s source of truth lives at `.planning/`. Read `.planning/index.md` before any non-trivial work. Check `.planning/handoffs/` for the most recent snapshot — another tool may have left state for you to resume from.
+
+## Cross-tool
+
+When usage limits hit, run `handoff-snapshot` and resume in Codex / Cursor / ChatGPT / Gemini. Each has its own schema file in `.planning/`.
+
+## Codex role
+
+Codex is a first-class j-stack runtime with two primary operating modes:
+
+- **Fallback mode:** Claude Code hits usage limits or the user deliberately switches tools. Resume from `.planning/index.md`, the latest `.planning/handoffs/` snapshot, and `.planning/log.md`.
+- **Review mode:** Claude invokes Codex for an independent `second-opinion` review. Inspect only the requested artifact unless the prompt asks for broader repo context, and return findings suitable for filing under `.planning/reviews/`.
+
+In both modes, keep `.planning/` as the durable source of truth. Notable analysis, decisions, reviews, and handoff state should be written into the appropriate `.planning/` section and logged in `.planning/log.md`.
+
+## Claude skill mapping for Codex
+
+Claude slash commands and skills are the source names for the process. In Codex, follow the same lane semantics even when the command itself is not available:
+
+| Claude surface | Codex behavior |
+| --- | --- |
+| `/office-hours`, `/plan-ceo-review` | Run EXPAND as a problem/scope challenge before design work. |
+| `superpowers:brainstorming` | Refine requirements and approaches before planning or code edits. |
+| `prior-art-survey` | Use the bundled prior-art skill files and web/package research where available. |
+| `superpowers:writing-plans` | Produce or follow a locked implementation plan before BUILD work. |
+| `superpowers:subagent-driven-development` | Keep implementation scoped, isolated, test-driven, and spec-bound. |
+| `/qa`, `/design-review`, `/cso` | Treat POLISH as verification, UX review, and security/risk review. |
+| `second-opinion` | Usually means Codex is the independent reviewer; produce review artifacts, not edits. |
+| `handoff-snapshot` | Write a timestamped `.planning/handoffs/` snapshot before switching tools or pausing. |
+'
+
+AGENTS_CODEX_APPEND='
+## Codex role
+
+Codex is a first-class j-stack runtime with two primary operating modes:
+
+- **Fallback mode:** Claude Code hits usage limits or the user deliberately switches tools. Resume from `.planning/index.md`, the latest `.planning/handoffs/` snapshot, and `.planning/log.md`.
+- **Review mode:** Claude invokes Codex for an independent `second-opinion` review. Inspect only the requested artifact unless the prompt asks for broader repo context, and return findings suitable for filing under `.planning/reviews/`.
+
+In both modes, keep `.planning/` as the durable source of truth. Notable analysis, decisions, reviews, and handoff state should be written into the appropriate `.planning/` section and logged in `.planning/log.md`.
+
+## Claude skill mapping for Codex
+
+Claude slash commands and skills are the source names for the process. In Codex, follow the same lane semantics even when the command itself is not available:
+
+| Claude surface | Codex behavior |
+| --- | --- |
+| `/office-hours`, `/plan-ceo-review` | Run EXPAND as a problem/scope challenge before design work. |
+| `superpowers:brainstorming` | Refine requirements and approaches before planning or code edits. |
+| `prior-art-survey` | Use the bundled prior-art skill files and web/package research where available. |
+| `superpowers:writing-plans` | Produce or follow a locked implementation plan before BUILD work. |
+| `superpowers:subagent-driven-development` | Keep implementation scoped, isolated, test-driven, and spec-bound. |
+| `/qa`, `/design-review`, `/cso` | Treat POLISH as verification, UX review, and security/risk review. |
+| `second-opinion` | Usually means Codex is the independent reviewer; produce review artifacts, not edits. |
+| `handoff-snapshot` | Write a timestamped `.planning/handoffs/` snapshot before switching tools or pausing. |
+'
+
+PROJECT_AGENTS="${PWD}/AGENTS.md"
+if [ -f "$PROJECT_AGENTS" ]; then
+  if grep -q "Codex role" "$PROJECT_AGENTS"; then
+    info "  AGENTS.md already contains Codex lane configuration — skipping"
+  elif grep -q "Stack ownership" "$PROJECT_AGENTS"; then
+    printf '\n%s' "$AGENTS_CODEX_APPEND" >> "$PROJECT_AGENTS"
+    info "  Appended Codex lane configuration to existing AGENTS.md"
+  else
+    printf '\n# Project Context\n%s' "$AGENTS_SECTION" >> "$PROJECT_AGENTS"
+    info "  Appended j-stack section to existing AGENTS.md"
+  fi
+else
+  printf '# Project Context\n%s' "$AGENTS_SECTION" > "$PROJECT_AGENTS"
+  info "  Created AGENTS.md with Codex lane configuration"
 fi
 
 # ─── Phase 3.5: Global CLAUDE.md ──────────────────────────────────────────────

@@ -271,6 +271,15 @@ bash install.sh --skip-verify   # skip post-install verification
 
 The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/` with model directives injected, installs the 5 custom skills, writes the project `CLAUDE.md` lane configuration, and creates a global `~/.claude/CLAUDE.md` that makes j-stack the session authority in every project.
 
+### Codex integration modes
+
+j-stack treats Codex as a first-class cross-tool runtime through `AGENTS.md` and the `.planning/` wiki:
+
+- **Fallback mode:** when Claude usage limits hit, open the repo in Codex. Codex reads `AGENTS.md`, `.planning/index.md`, `.planning/log.md`, and the latest `.planning/handoffs/` snapshot, then resumes the current phase.
+- **Review mode:** `second-opinion` uses Codex as the independent reviewer for a spec, diff, or architecture decision. Codex should return review-ready findings that can be filed under `.planning/reviews/`.
+
+Codex does not need to run Claude slash commands directly. `AGENTS.md` maps those commands to equivalent Codex behavior while preserving the same phase order and wiki write-back rules.
+
 ### Starting a new PoC or improving an existing repo
 
 `session-start` fires automatically at session start (configured as a hook by `install.sh`). You don't run it manually.

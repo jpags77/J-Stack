@@ -1,0 +1,5 @@
+# Cursor Rules for this PoC
+
+Wiki at .planning/ is single source of truth. Read .planning/index.md before any non-trivial work. Check .planning/handoffs/ for the most recent snapshot from another tool.
+
+When producing notable output, file it back into .planning/ as a new page and update index.md.

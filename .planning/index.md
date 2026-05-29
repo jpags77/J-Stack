@@ -1,0 +1,36 @@
+# Wiki Index
+
+One-line summary of every page in this wiki. Update on every page creation.
+
+## Current State
+
+**Iteration:** 1
+**Phase:** EXPAND
+**Fidelity target:** C — MVP (production-ready Claude Code skill stack)
+**Last updated:** 2026-05-29T12:00:00Z
+
+## Engagement Context
+
+**Goal:** Integrate Understand-Anything (https://github.com/Lum1104/Understand-Anything) into j-stack — bring its codebase knowledge-graph and comprehension capabilities into the j-stack skill pipeline.
+**Constraints:** Must fit j-stack's phase pipeline (EXPAND→REFINE→SURVEY→PLAN→BUILD→POLISH→DEFEND→HANDOFF). MIT license.
+**Done when:** Understand-Anything capabilities are wired as usable skills within j-stack with clear phase mappings.
+**Prior docs:** Understand-Anything README and plugin structure. j-stack CLAUDE.md + session-start skill.
+
+## vision/
+- [understand-anything-integration.md](vision/understand-anything-integration.md) — design doc for wiring Lum1104/Understand-Anything into j-stack's phase pipeline
+- [codex-integration.md](vision/codex-integration.md) — implemented design for treating Codex as a first-class fallback and review runtime via AGENTS.md + .planning/
+
+## prior-art/
+(empty — populate after prior-art-survey)
+
+## plans/
+(empty — populate after writing-plans)
+
+## reviews/
+(empty — populate after /design-review, /cso, second-opinion)
+
+## stakeholder-pack/
+(empty — populate after stakeholder-pack)
+
+## handoffs/
+(empty — populate when switching tools)
