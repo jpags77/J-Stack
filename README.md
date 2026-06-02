@@ -102,11 +102,11 @@ The output isn't just research — it becomes the "what else did you consider" s
 
 | Skill | What it does |
 |-------|-------------|
-| `session-start` | Session orientation ritual. Run at the start of every session — reads wiki state, confirms fidelity target, surfaces scope changes, handles iteration bumps, and declares the session goal before any work begins. Prevents silent drift between sessions. |
-| `poc-wiki-init` | Bootstraps the `.planning/` wiki at project start. Asks the fidelity target question upfront, generates schema files for Claude Code, Codex, Cursor, and ChatGPT. Idempotent — safe to run again. |
-| `handoff-snapshot` | Writes a timestamped snapshot to `.planning/handoffs/` with context, decisions, next steps, and a paste-ready continuation prompt for the next tool. |
-| `second-opinion` | Dispatches an artifact to Codex CLI for independent review, then synthesizes a convergence/divergence matrix. Two AI vendors reviewing the same artifact independently. |
-| `stakeholder-pack` | Aggregates vision, prior-art, security, and cross-model review outputs into a single executive-ready document. Pre-answers the five standard enterprise PoC questions. |
+| `session-start` | Session orientation ritual. Fires automatically at session start — reads `CRITICAL_FACTS.md` first (~120 tokens), then `status.md`, confirms fidelity target, surfaces scope changes, handles iteration bumps, and declares the session goal before any work begins. Prevents silent drift between sessions. |
+| `poc-wiki-init` | Bootstraps the `.planning/` wiki at project start. Creates `CRITICAL_FACTS.md`, `status.md`, `decisions/`, and schema files for Claude Code, Codex, Cursor, and ChatGPT. Asks the fidelity target question upfront. Idempotent — safe to run again. |
+| `handoff-snapshot` | Rewrites `status.md` with the current project state, writes a timestamped snapshot to `.planning/handoffs/` with context, decisions, next steps, and a paste-ready continuation prompt for the next tool. |
+| `second-opinion` | Dispatches an artifact to Codex CLI for independent review, synthesizes a convergence/divergence matrix, and extracts architectural decisions as ADRs into `.planning/decisions/`. Two AI vendors reviewing the same artifact independently. |
+| `stakeholder-pack` | Aggregates vision, prior-art, decisions, security, and cross-model review outputs into a single executive-ready document. Pre-answers the five standard enterprise PoC questions. |
 
 ---
 
@@ -130,12 +130,15 @@ Three patterns borrowed from [obsidian-second-brain](https://github.com/eugeniug
 - **`status.md` (self-rewriting current state)** — `handoff-snapshot` overwrites this file each session rather than only appending timestamped snapshots. The wiki has one accurate current-state document, not a growing pile of stale ones. Timestamped snapshots are still written to `handoffs/` for cross-tool resumption.
 - **`decisions/` ADR structure** — architectural, technology, and scope decisions are filed as Architecture Decision Records in `decisions/`. `second-opinion` extracts decisions from its synthesis into ADRs here. `stakeholder-pack` reads from `decisions/` for the "what else we considered" section.
 
-| File | Read by |
-|------|---------|
-| `.planning/CLAUDE.md` | Claude Code |
-| `.planning/AGENTS.md` | Codex CLI |
-| `.planning/.cursor/rules` | Cursor |
-| `.planning/chatgpt-brief.md` | ChatGPT (paste-in) |
+| File / Dir | Purpose | Read by |
+|---|---|---|
+| `.planning/CRITICAL_FACTS.md` | ~120-token always-loaded orientation | All tools, every session |
+| `.planning/status.md` | Current-state document, rewritten each session | All tools, every session |
+| `.planning/decisions/` | Architecture Decision Records | `second-opinion`, `stakeholder-pack` |
+| `.planning/CLAUDE.md` | Schema for Claude Code | Claude Code |
+| `.planning/AGENTS.md` | Schema for Codex CLI | Codex CLI |
+| `.planning/.cursor/rules` | Schema for Cursor | Cursor |
+| `.planning/chatgpt-brief.md` | Paste-in primer | ChatGPT |
 
 When Anthropic limits hit mid-engagement — and they will — `handoff-snapshot` writes a continuation prompt to `.planning/handoffs/`. Paste it into Codex, Cursor, or ChatGPT and the session resumes from exactly where it stopped. No context lost, no re-explanation, no starting over.
 
@@ -303,7 +306,8 @@ The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/
 **Every subsequent session:**
 ```
 1. session-start fires automatically
-   ├── reads wiki: iteration / phase / fidelity / open items
+   ├── reads CRITICAL_FACTS.md (~120 tokens): phase, fidelity, iteration
+   ├── reads status.md: what was in progress, next steps
    ├── confirms scope: "anything changed since last session?"
    ├── confirms fidelity target
    ├── asks session goal
