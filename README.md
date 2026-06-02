@@ -122,7 +122,13 @@ Anthropic is tightening usage limits, and burning Opus credits on mechanical wor
 
 A full pipeline run spends Opus tokens where they move the needle and Haiku tokens on everything else.
 
-**The `.planning/` wiki is the second defense** — and the emergency bailout. This is the same concept Andrej Karpathy describes with his Obsidian second brain: a persistent, structured external memory that outlives any single session or tool. Every decision, artifact, and handoff is written to markdown files in `.planning/`. The wiki speaks every tool's native language:
+**The `.planning/` wiki is the second defense** — and the emergency bailout. This is the same concept Andrej Karpathy describes with his Obsidian second brain: a persistent, structured external memory that outlives any single session or tool. Every decision, artifact, and handoff is written to markdown files in `.planning/`. The wiki speaks every tool's native language.
+
+Three patterns borrowed from [obsidian-second-brain](https://github.com/eugeniughelbur/obsidian-second-brain) improve the wiki's practicality:
+
+- **`CRITICAL_FACTS.md`** — a ~120-token always-loaded file with project name, fidelity target, current phase, and definition of done. `session-start` reads this first, before anything else, so orientation is nearly free.
+- **`status.md` (self-rewriting current state)** — `handoff-snapshot` overwrites this file each session rather than only appending timestamped snapshots. The wiki has one accurate current-state document, not a growing pile of stale ones. Timestamped snapshots are still written to `handoffs/` for cross-tool resumption.
+- **`decisions/` ADR structure** — architectural, technology, and scope decisions are filed as Architecture Decision Records in `decisions/`. `second-opinion` extracts decisions from its synthesis into ADRs here. `stakeholder-pack` reads from `decisions/` for the "what else we considered" section.
 
 | File | Read by |
 |------|---------|

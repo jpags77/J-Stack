@@ -188,6 +188,8 @@ Record the answer. It will be written into `index.md` in step 4. This answer gov
 
 ```
 .planning/
+├── CRITICAL_FACTS.md
+├── status.md
 ├── index.md
 ├── log.md
 ├── CLAUDE.md
@@ -198,6 +200,7 @@ Record the answer. It will be written into `index.md` in step 4. This answer gov
 ├── vision/
 ├── prior-art/
 ├── plans/
+├── decisions/
 ├── reviews/
 ├── stakeholder-pack/
 ├── handoffs/
@@ -205,6 +208,37 @@ Record the answer. It will be written into `index.md` in step 4. This answer gov
 ```
 
 ### 4. Generate stub files
+
+**CRITICAL_FACTS.md** — ~120 tokens, always loaded first by session-start and any tool. Initial content:
+
+```markdown
+# Critical Facts
+
+Always-loaded context. Update when any of these change.
+
+**Project:** [name from user or repo]
+**Fidelity target:** [answer from fidelity question — A/B/C and description]
+**Current phase:** Not started
+**Iteration:** 1
+**Definition of done:** [from engagement context, or "not yet defined"]
+**Last session:** [current ISO date]
+```
+
+**status.md** — single canonical current-state document. Rewritten each session by handoff-snapshot. Initial content:
+
+```markdown
+# Current Status
+
+Rewritten each session. Last updated: [current ISO timestamp]
+
+**Phase:** Not started
+**Last completed:** none
+**Active task:** none
+**Blockers:** none
+
+## Next steps
+- Run session-start to begin
+```
 
 **index.md** — content-oriented catalog. Initial content:
 
@@ -228,6 +262,9 @@ One-line summary of every page in this wiki. Update on every page creation.
 
 ## plans/
 (empty — populate after writing-plans)
+
+## decisions/
+(empty — file architectural, technology, and scope decisions here as ADRs as they're made)
 
 ## reviews/
 (empty — populate after /design-review, /cso, second-opinion)
@@ -258,15 +295,20 @@ This project uses a markdown wiki at .planning/ as its single source of truth.
 
 ## Before any non-trivial work
 
-1. Read .planning/index.md to understand existing state.
-2. Read .planning/log.md to see recent activity.
-3. Check .planning/handoffs/ for the most recent snapshot if one exists — another tool may have left state for you.
+1. Read .planning/CRITICAL_FACTS.md — ~120 tokens, always loaded. Project name, fidelity target, current phase, iteration, definition of done.
+2. Read .planning/status.md — current project state (rewritten each session, always current).
+3. Read .planning/index.md only if you need the full wiki map.
+4. Check .planning/handoffs/ only if resuming from a different tool.
 
 ## Stack ownership (avoid skill conflicts)
 
 - Superpowers + prior-art-survey owns: brainstorming, planning, building (think → plan → build).
 - gstack contributes: front-end scoping (/office-hours, /plan-ceo-review), fidelity polish (/qa, /design-*, /cso), handoff docs (/document-release).
 - Custom skills contribute: prior-art-survey, second-opinion, stakeholder-pack, poc-wiki-init, handoff-snapshot.
+
+## Filing decisions
+
+When a significant architectural, technology, or scope decision is made, write an ADR to .planning/decisions/<slug>-<date>.md with: context, decision, rationale, alternatives considered. Update index.md.
 
 ## Wiki maintenance
 
@@ -284,8 +326,9 @@ This project uses a markdown wiki at .planning/ as its single source of truth.
 
 ## Before any work
 
-1. Read .planning/index.md.
-2. Read .planning/handoffs/ for the most recent snapshot — Claude Code or another tool may have left state for you to resume from.
+1. Read .planning/CRITICAL_FACTS.md — always-loaded context: project name, fidelity target, current phase.
+2. Read .planning/status.md — current project state, what's in progress, next steps.
+3. Check .planning/handoffs/ only if resuming from a tool switch.
 
 ## Your role
 
@@ -293,7 +336,7 @@ You are likely being invoked because of one of these reasons:
 - Cross-vendor second-opinion review (via the second-opinion skill in Claude Code).
 - Direct user invocation because Claude usage limits were hit.
 
-In either case, your output should be filed into .planning/ as a new page and logged in log.md.
+In either case, your output should be filed into .planning/ as a new page and logged in log.md. If the work involves an architectural decision, also write an ADR to .planning/decisions/.
 ```
 
 **.cursor/rules** — schema for Cursor:
@@ -325,6 +368,8 @@ When I ask you about this project, I will paste relevant pages from .planning/ i
 ### 5. Initialize git
 
 If the project is not already a git repo, run `git init` and add `.planning/` to be tracked. If it is, just `git add .planning/` and commit with message `wiki: bootstrap .planning/ structure`.
+
+Create the `decisions/` directory with a `.gitkeep` so it's tracked even when empty.
 
 ### 6. Optional remote
 
@@ -391,15 +436,37 @@ Write to `.planning/handoffs/<timestamp>-snapshot.md` with this structure:
 [A paste-ready prompt the user can drop into the next tool. Reference this handoff file by path. Keep under 200 words.]
 ```
 
-### 3. Append to log.md
+### 3. Rewrite status.md
+
+Overwrite `.planning/status.md` with the current project state — this is the always-current document session-start reads on the next session:
+
+```markdown
+# Current Status
+
+Rewritten each session. Last updated: <timestamp>
+
+**Phase:** <current phase>
+**Last completed:** <what was finished this session>
+**Active task:** <what was in progress when snapshot taken, or "none">
+**Blockers:** <open blockers, or "none">
+
+## Next steps
+<numbered list from the snapshot's next steps section>
+```
+
+### 4. Update CRITICAL_FACTS.md if phase or iteration changed
+
+If the current phase differs from what CRITICAL_FACTS.md records, or the iteration bumped, rewrite the relevant lines. Keep all other lines intact.
+
+### 5. Append to log.md
 
 `## [<timestamp>] handoff | <reason: usage_limits / planned_switch / pause>`
 
-### 4. Update index.md
+### 6. Update index.md
 
 Add the new handoff snapshot to the index with one-line summary.
 
-### 5. Output to user
+### 7. Output to user
 
 Show:
 - Path to the snapshot file
@@ -488,7 +555,21 @@ This review used Claude Opus 4.7 and OpenAI Codex (<version>) reviewing the same
 
 ### 6. File the output
 
-Write to `.planning/reviews/second-opinion-<artifact-slug>-<date>.md`. Update `.planning/index.md`. Append to `.planning/log.md`.
+Write the full synthesis to `.planning/reviews/second-opinion-<artifact-slug>-<date>.md`. Update `.planning/index.md`. Append to `.planning/log.md`.
+
+If the review surfaces architectural or technology decisions not yet documented (e.g., "chose X over Y because Z"), extract each as a separate ADR to `.planning/decisions/<slug>-<date>.md` with this structure:
+
+```markdown
+# ADR: <decision title>
+
+**Date:** <ISO date>
+**Status:** accepted
+**Context:** [why this decision was needed]
+**Decision:** [what was chosen]
+**Rationale:** [why this option over alternatives]
+**Alternatives considered:** [what else was on the table]
+**Consequences:** [what this decision means going forward]
+```
 
 ### 7. Output to user
 
@@ -535,6 +616,7 @@ Pre-answering all five in the deliverable changes the meeting from "defend the w
 Check `.planning/` for required inputs:
 - `.planning/vision/` — for "why we built it this way"
 - `.planning/prior-art/` — for "what else we considered"
+- `.planning/decisions/` — for ADRs (architecture, technology, scope choices with rationale)
 - `.planning/reviews/security-*.md` (output of /cso) — for "is it secure"
 - `.planning/reviews/design-*.md` — for design rationale
 - `.planning/reviews/second-opinion-*.md` — for cross-vendor agreement
@@ -564,7 +646,7 @@ Read each file. Extract strongest claims and decisions, not full content.
 [Pull from vision/. Cover the original ask vs. reframed vision, key decisions, what was deliberately not built.]
 
 ## What else we considered
-[Pull from prior-art/. Name OSS projects evaluated and rejected, libraries chosen vs. alternatives, patterns considered.]
+[Pull from prior-art/ and decisions/. Name OSS projects evaluated and rejected, libraries chosen vs. alternatives, patterns considered. For each significant choice, cite the ADR from decisions/.]
 
 ## Architecture & implementation
 [High-level architecture, key technology choices with rationale, what's working vs. stubbed vs. mocked.]
@@ -585,6 +667,7 @@ Read each file. Extract strongest claims and decisions, not full content.
 - Full security review: .planning/reviews/security-*.md
 - Full prior-art survey: .planning/prior-art/*.md
 - Full cross-model review: .planning/reviews/second-opinion-*.md
+- Architecture decision records: .planning/decisions/*.md
 - Implementation plan: .planning/plans/*.md
 ```
 
@@ -628,10 +711,12 @@ Look for `.planning/` in the project root.
 
 ### 2. Read current state
 
-Read these files in order:
-1. `.planning/index.md` — full file. Extract: current iteration, current phase, fidelity level, what's been completed.
-2. `.planning/log.md` — last 15 entries. Extract: what happened last session, any open decisions or blockers.
-3. `.planning/handoffs/` — most recent file if any. Extract: next steps, continuation prompt.
+Read these files in order, stopping when you have enough context:
+1. `.planning/CRITICAL_FACTS.md` — read always (~120 tokens). Extract: project name, fidelity target, current phase, iteration, definition of done.
+2. `.planning/status.md` — read always. Extract: last completed task, active task, blockers, next steps. This is rewritten each session and is always current.
+3. `.planning/index.md` — read only if CRITICAL_FACTS + status don't provide enough context for orientation.
+4. `.planning/log.md` — last 15 entries. Extract: what happened last session, any open decisions or blockers.
+5. `.planning/handoffs/` — most recent file only if the user is resuming from a different tool (status.md will indicate this via an "active tool" field or the continuation prompt).
 
 ### 3. Detect engagement type
 
@@ -702,7 +787,9 @@ If Q1 revealed a scope change:
 1. Append to `.planning/log.md`:
    `## [timestamp] change | iteration N→N+1 | [one-line reason for change]`
 
-2. Update `## Current State` in `index.md`:
+2. Update `CRITICAL_FACTS.md`: bump iteration number and set current phase to the re-entry point.
+
+3. Update `## Current State` in `index.md`:
    - Bump iteration number
    - Set current phase to the re-entry point identified in Q1
 
