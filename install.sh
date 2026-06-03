@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # j-stack install script
 # Sets up the Claude Code enterprise PoC stack:
-#   Superpowers + cherry-picked gstack skills + 4 custom skills + CLAUDE.md lane config
+#   Superpowers + cherry-picked gstack skills + 5 custom skills + prior-art bundle
+#   + CLAUDE.md lane config + SessionStart hook
 #
 # Usage: bash install.sh [--skip-codex] [--skip-verify]
 
@@ -87,24 +88,27 @@ fi
 
 mkdir -p "$SKILLS_DIR"
 
-declare -A GSTACK_MODELS=(
-  [cso]=opus
-  [office-hours]=opus
-  [plan-ceo-review]=opus
-  [qa]=sonnet
-  [design-shotgun]=sonnet
-  [design-html]=sonnet
-  [design-review]=sonnet
-  [codex]=sonnet
-  [document-release]=sonnet
-  [freeze]=haiku
-  [guard]=haiku
-)
+get_gstack_model() {
+  case "$1" in
+    cso)             echo opus ;;
+    office-hours)    echo opus ;;
+    plan-ceo-review) echo opus ;;
+    qa)              echo sonnet ;;
+    design-shotgun)  echo sonnet ;;
+    design-html)     echo sonnet ;;
+    design-review)   echo sonnet ;;
+    codex)           echo sonnet ;;
+    document-release) echo sonnet ;;
+    freeze)          echo haiku ;;
+    guard)           echo haiku ;;
+    *)               echo sonnet ;;
+  esac
+}
 
 for skill in "${GSTACK_SKILLS[@]}"; do
   dest="${SKILLS_DIR}/${skill}"
   cp -r "${GSTACK_SCRATCH}/${skill}" "${SKILLS_DIR}/"
-  model="${GSTACK_MODELS[$skill]}"
+  model="$(get_gstack_model "$skill")"
 
   # Find the main skill entry file
   entry=""
@@ -1004,6 +1008,69 @@ else
   info "  Created ~/.claude/CLAUDE.md with j-stack configuration"
 fi
 
+# ─── Phase 3.6: SessionStart hook ─────────────────────────────────────────────
+
+info "Phase 3.6 — Installing SessionStart hook…"
+
+SETTINGS_JSON="${HOME}/.claude/settings.json"
+HOOK_MARKER="MANDATORY j-stack"
+
+write_session_hook() {
+  python3 - "$SETTINGS_JSON" <<'PYEOF'
+import json, os, sys
+
+path = sys.argv[1]
+marker = "MANDATORY j-stack"
+command = (
+    "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\","
+    "\"additionalContext\":\"MANDATORY j-stack: Invoke the session-start skill "
+    "immediately before any development work (coding, planning, design, or file "
+    "changes). Skip only for pure Q&A that produces no artifacts. Do not wait for "
+    "user instruction — run it now.\"}}'"
+)
+entry = {"hooks": [{"type": "command", "command": command,
+                    "statusMessage": "Loading j-stack session context..."}]}
+
+data = {}
+if os.path.exists(path):
+    try:
+        with open(path) as f:
+            data = json.load(f)
+    except Exception:
+        print("PARSE_ERROR")
+        sys.exit(3)
+
+hooks = data.setdefault("hooks", {})
+sessions = hooks.setdefault("SessionStart", [])
+if marker in json.dumps(sessions):
+    print("ALREADY")
+    sys.exit(0)
+sessions.append(entry)
+os.makedirs(os.path.dirname(path), exist_ok=True)
+with open(path, "w") as f:
+    json.dump(data, f, indent=2, ensure_ascii=False)
+    f.write("\n")
+print("WROTE")
+PYEOF
+}
+
+if grep -q "$HOOK_MARKER" "$SETTINGS_JSON" 2>/dev/null; then
+  info "  SessionStart hook already present — skipping"
+elif command -v python3 &>/dev/null; then
+  result="$(write_session_hook)"
+  case "$result" in
+    WROTE)   info "  ✓ SessionStart hook written to ${SETTINGS_JSON}" ;;
+    ALREADY) info "  SessionStart hook already present — skipping" ;;
+    *)
+      warn "  Could not auto-merge ${SETTINGS_JSON} (invalid JSON or write error)."
+      warn "  Add the SessionStart hook manually — see README 'Manual hook setup'."
+      ;;
+  esac
+else
+  warn "  python3 not found — cannot safely merge ${SETTINGS_JSON}."
+  warn "  Add the SessionStart hook manually — see README 'Manual hook setup'."
+fi
+
 # ─── Phase 4: Verification ────────────────────────────────────────────────────
 
 if [ "$SKIP_VERIFY" = false ]; then
@@ -1046,8 +1113,9 @@ echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━
 echo ""
 echo "Next steps:"
 echo "  1. Open a new Claude Code session in your project directory"
-echo "  2. Run: session-start    (orient — or poc-wiki-init if first time on this project)"
-echo "  3. Run: /office-hours    (founder-lens scoping)"
+echo "  2. session-start fires automatically (SessionStart hook) — it orients,"
+echo "     or bootstraps the .planning/ wiki on first run for this project"
+echo "  3. It dispatches to /office-hours to begin EXPAND (founder-lens scoping)"
 echo "  4. Follow the pipeline in ~/.claude/CLAUDE.md"
 echo ""
 echo "Each session: session-start → confirm fidelity → confirm phase → do work → handoff-snapshot (if switching tools)"

@@ -18,7 +18,7 @@ That survey found two projects already doing the hard parts better than a greenf
 - **[gstack](https://github.com/garrytan/gstack)** by [@garrytan](https://github.com/garrytan) — a 40+ skill community pack covering the gaps Superpowers doesn't: founder-lens scoping, UI design workflow, security review, and QA.
 - **[Andrej Karpathy](https://karpathy.ai)**'s second brain concept — the idea of a persistent, structured markdown wiki that outlives any single session or tool. Every decision, artifact, and handoff is written to `.planning/`. When AI usage limits force a tool switch mid-engagement, the new tool reads the wiki and resumes without re-explanation. The wiki speaks every tool's native language (CLAUDE.md, AGENTS.md, .cursor/rules, chatgpt-brief.md). This is the memory layer that makes the whole stack resilient.
 
-j-stack is an integration layer on top of these foundations. It doesn't replace them — it cherry-picks the right skills from each, adds five custom skills that fill remaining gaps (prior art research, cross-vendor review, stakeholder packaging, session orientation, and the wiki itself), wires them into a coherent pipeline, and configures session behavior so the whole thing runs without manual orchestration.
+j-stack is an integration layer on top of these foundations. It doesn't replace them — it cherry-picks the right skills from each, adds its own custom skills that fill remaining gaps (session orientation, the wiki itself, cross-vendor review, stakeholder packaging, and a prior-art research agent), wires them into a coherent pipeline, and configures session behavior so the whole thing runs without manual orchestration.
 
 The insight Superpowers and gstack share: **AI agents are powerful but undisciplined.** The value isn't the models — it's the process imposed on them. j-stack applies that principle earlier in the lifecycle than either project does alone, covering the full arc from "are we solving the right problem?" through a security-reviewed, cross-vendor-validated, stakeholder-ready deliverable.
 
@@ -259,7 +259,7 @@ All five are assembled by `stakeholder-pack` into a single document before the d
 ### Installation
 
 ```bash
-git clone https://github.com/jpags77/J-Stack.git
+git clone https://github.com/jpags77/j-stack.git
 cd j-stack
 bash install.sh
 ```
@@ -269,7 +269,31 @@ bash install.sh --skip-codex    # skip Codex CLI check (if not using second-opin
 bash install.sh --skip-verify   # skip post-install verification
 ```
 
-The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/` with model directives injected, installs the 5 custom skills, writes the project `CLAUDE.md` lane configuration, and creates a global `~/.claude/CLAUDE.md` that makes j-stack the session authority in every project.
+The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/` with model directives injected, installs the 5 custom skills plus the bundled `prior-art-survey` and its three scouts, writes the project `CLAUDE.md` lane configuration, creates a global `~/.claude/CLAUDE.md` that makes j-stack the session authority in every project, and merges a `SessionStart` hook into `~/.claude/settings.json` so `session-start` fires automatically (see [Manual hook setup](#manual-hook-setup) if you don't have `python3`).
+
+### Manual hook setup
+
+`install.sh` uses `python3` to merge the `SessionStart` hook into `~/.claude/settings.json` without disturbing your existing settings. If `python3` isn't available, the installer skips this step and warns you — add the hook by hand. Merge this into the `hooks` object of `~/.claude/settings.json` (create the file with `{ }` if it doesn't exist):
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"MANDATORY j-stack: Invoke the session-start skill immediately before any development work (coding, planning, design, or file changes). Skip only for pure Q&A that produces no artifacts. Do not wait for user instruction — run it now.\"}}'",
+            "statusMessage": "Loading j-stack session context..."
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Without the hook, j-stack still works — the global `~/.claude/CLAUDE.md` instructs Claude to run `session-start` at the top of every session — but the hook makes it deterministic rather than relying on the model honoring the instruction.
 
 ### Codex integration modes
 
@@ -282,7 +306,7 @@ Codex does not need to run Claude slash commands directly. `AGENTS.md` maps thos
 
 ### Starting a new PoC or improving an existing repo
 
-`session-start` fires automatically at session start (configured as a hook by `install.sh`). You don't run it manually.
+`session-start` fires automatically at session start (via the `SessionStart` hook `install.sh` merges into `~/.claude/settings.json` — see [Manual hook setup](#manual-hook-setup) for the no-`python3` fallback). You don't run it manually.
 
 **First session on a new project:**
 ```
