@@ -259,8 +259,8 @@ All five are assembled by `stakeholder-pack` into a single document before the d
 ### Installation
 
 ```bash
-git clone https://github.com/jpags77/j-stack.git
-cd j-stack
+git clone https://github.com/jpags77/J-Stack.git
+cd J-Stack
 bash install.sh
 ```
 
