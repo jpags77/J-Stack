@@ -818,32 +818,129 @@ Fidelity  : [level]
 Last session: [1-sentence summary or "first session"]
 This session: [session goal]
 [If scope changed]: Scope change recorded — re-entering [phase], prior plan archived as v[N].
-[If wiki sections empty]: Wiki sections unpopulated — skills should file output to .planning/ as work progresses.
 ───────────────────────────────────────────
 ```
 
-Then immediately dispatch to the correct skill based on current phase — do not wait for further instruction:
+Then enforce phase gates and dispatch. **The filesystem is authoritative — the phase tracker is advisory.** Before invoking any phase skill, verify the prerequisite artifact for that phase exists. If it doesn't, dispatch to the skill that produces it instead.
 
-| Current phase | Dispatch to |
-|---------------|------------|
-| Not started / EXPAND | Invoke `/office-hours` |
-| EXPAND (office-hours done, ceo-review pending) | Invoke `/plan-ceo-review` |
-| REFINE | Invoke `superpowers:brainstorming` |
-| SURVEY | Invoke `prior-art-survey` |
-| PLAN | Invoke `superpowers:writing-plans` |
-| BUILD | Invoke `superpowers:subagent-driven-development` |
-| BUILD — UI work in progress | Invoke `/design-shotgun` or `/design-html` depending on whether directions are locked |
-| POLISH — code review pending | Invoke `/qa` |
-| POLISH — security pending | Invoke `/cso` |
-| POLISH — design review pending | Invoke `/design-review` |
-| DEFEND — cross-vendor review pending | Invoke `second-opinion` |
-| DEFEND — stakeholder pack pending | Invoke `stakeholder-pack` |
-| HANDOFF — docs pending | Invoke `/document-release` |
-| HANDOFF — switching tools | Invoke `handoff-snapshot` |
+#### Phase gate table
 
-If the current phase has multiple sub-steps (e.g., POLISH has qa + cso + design-review), check `index.md` and `log.md` to determine which have already run, then dispatch to the first pending one.
+| Phase to enter | Gate: artifact that must exist | If gate fails: invoke instead |
+|---|---|---|
+| REFINE | `.planning/vision/` contains ≥1 file | `/office-hours` (then `/plan-ceo-review`) |
+| SURVEY | `.planning/vision/` contains a file matching `brainstorm-*.md` | `superpowers:brainstorming` |
+| PLAN | `.planning/prior-art/` contains ≥1 file | `prior-art-survey` |
+| PRE-MORTEM | `.planning/plans/` contains ≥1 .md file | `superpowers:writing-plans` |
+| BUILD | `.planning/decisions/pre-mortem-*.md` exists | `pre-mortem` |
+| POLISH | User confirms BUILD is complete or git log shows commits since spec date | Ask user to confirm |
+| DEFEND | `.planning/reviews/` contains files matching `qa-*`, `security-*`, and `design-*` | Invoke first missing polish skill |
+| HANDOFF | `.planning/reviews/second-opinion-*.md` and `.planning/stakeholder-pack/` each contain ≥1 file | Invoke first missing defend skill |
 
-If the phase is ambiguous or the session goal implies re-entering a different phase than recorded, confirm with the user before dispatching.
+When brainstorming completes, ensure its output is filed to `.planning/vision/brainstorm-<date>.md` before marking the REFINE phase done. This is what the SURVEY gate checks for.
+
+#### Dispatch table
+
+Once the gate for the target phase is satisfied, invoke immediately — do not ask the user for permission:
+
+| Current phase | Invoke now |
+|---|---|
+| EXPAND | `/office-hours` |
+| EXPAND (office-hours done, ceo-review pending) | `/plan-ceo-review` |
+| REFINE | `superpowers:brainstorming` |
+| SURVEY | `prior-art-survey` |
+| PLAN | `superpowers:writing-plans` |
+| PRE-MORTEM | `pre-mortem` |
+| BUILD | `superpowers:subagent-driven-development` |
+| BUILD — UI work | `/design-shotgun` or `/design-html` depending on whether directions are locked |
+| POLISH — qa pending | `/qa` |
+| POLISH — security pending | `/cso` |
+| POLISH — design review pending | `/design-review` |
+| DEFEND — cross-vendor review pending | `second-opinion` |
+| DEFEND — stakeholder pack pending | `stakeholder-pack` |
+| HANDOFF — docs pending | `/document-release` |
+| HANDOFF — switching tools | `handoff-snapshot` |
+
+Gates are not optional. If the user wants to skip a gate, they must say so explicitly. Do not offer to skip gates proactively.
+SKILL_EOF
+
+# 2.6 pre-mortem
+install_skill "pre-mortem" <<'SKILL_EOF'
+---
+name: pre-mortem
+description: Stress-tests a locked implementation plan before any code is written. Assumes the project has already failed and reverse-engineers the top failure modes. Runs between PLAN and BUILD — session-start will not dispatch to BUILD until a pre-mortem file exists in .planning/decisions/. Requires a spec file in .planning/plans/ to activate.
+model: opus
+---
+
+# pre-mortem
+
+## When to activate
+
+Run after `superpowers:writing-plans` has produced a locked spec in `.planning/plans/`, and before `superpowers:subagent-driven-development` begins any implementation. `session-start` will invoke this automatically when a spec exists but no `pre-mortem-*.md` exists in `.planning/decisions/`.
+
+## Why this exists
+
+Plans that survive a pre-mortem are better plans. The technique assumes failure has already happened, then works backwards to the most plausible causes. This surfaces risks that forward-looking planning misses — because forward-looking planning is optimistic by nature.
+
+This is distinct from `/office-hours` (which reframes the problem) and `/plan-ceo-review` (which challenges scope). Both of those run before the spec exists. This runs after — against the actual implementation plan.
+
+## Process
+
+### 1. Read the spec
+
+Read the most recent `.md` file in `.planning/plans/`. If none exists, halt: "No spec found in `.planning/plans/`. Run `superpowers:writing-plans` before `pre-mortem`."
+
+### 2. Assume failure
+
+Frame: "It is 6 months from now. This project launched and failed. The failure was significant enough that stakeholders are asking what went wrong. Work backwards from that assumed failure to identify the most plausible causes."
+
+Generate the top 5 failure modes across these categories:
+
+- **Technical:** Implementation assumptions that proved wrong; complexity underestimated; integration failures; performance cliffs; edge cases the spec didn't cover.
+- **Scope:** Features that crept in; the core use case that wasn't actually the real problem; definition of done that shifted after build began.
+- **Assumptions:** External dependencies that weren't available; user behavior that differed from the spec's assumptions; data quality that didn't hold.
+- **Process:** Subagent coordination failures; spec drift mid-implementation; verification skipped under time pressure.
+- **Stakeholder:** Demo that didn't match what was asked for; security or compliance finding that blocked adoption.
+
+### 3. For each failure mode, produce
+
+```markdown
+### [N]. <failure mode name>
+
+**Category:** technical / scope / assumptions / process / stakeholder
+**How it manifests:** [what the failure looks like when it happens]
+**Likelihood:** high / medium / low
+**Signal to watch for:** [early warning during BUILD or POLISH]
+**Mitigation:** [what to add, remove, or change in the spec to reduce this risk]
+```
+
+### 4. Net assessment
+
+After the five failure modes:
+
+```markdown
+## Net assessment
+
+**Spec changes recommended:** yes / no
+[If yes: specific changes — reference exact spec sections. Be precise.]
+
+**Proceed to BUILD:** yes / yes with changes / no — revisit plan
+```
+
+If spec changes are recommended, surface them to the user before filing. Do not modify the spec unilaterally — spec changes belong to `superpowers:writing-plans`.
+
+### 5. File output
+
+Write to `.planning/decisions/pre-mortem-<date>.md`. Update `.planning/index.md`. Append to `.planning/log.md`:
+
+`## [timestamp] pre-mortem | <proceed / proceed-with-changes / revisit-plan>`
+
+### 6. Output to user
+
+Show the full pre-mortem in the conversation. If the net assessment is "proceed with changes", list the changes needed and confirm with the user before BUILD begins.
+
+## Output
+
+Pre-mortem document filed to `.planning/decisions/`. `session-start` will not dispatch to BUILD until this file exists.
 SKILL_EOF
 
 # ─── Phase 2.5: Prior-art research skills ─────────────────────────────────────
@@ -875,12 +972,13 @@ Multiple skill packs are installed. Each owns a specific phase of the workflow:
 - **Refining (Refine phase):** Superpowers brainstorming
 - **Prior art (Survey phase):** prior-art-survey (custom)
 - **Planning (Plan phase):** Superpowers writing-plans
+- **Pre-mortem (Pre-mortem phase):** pre-mortem (custom) — gates BUILD
 - **Building (Build phase):** Superpowers subagent-driven-development, with /design-shotgun + /design-html for UI work
 - **Polishing (Polish phase):** /qa, /design-review, /cso (gstack)
 - **Defending (Defend phase):** second-opinion, stakeholder-pack (custom)
 - **Handoff:** /document-release (gstack), handoff-snapshot (custom)
 
-Run them in order. Do NOT use gstack'"'"'s /autoplan or /plan-eng-review — they overlap Superpowers'"'"' planning lane and create conflicts.
+Run them in order. session-start enforces phase gates by checking artifact existence — BUILD cannot start without a locked spec and a pre-mortem file. Do NOT use gstack'"'"'s /autoplan or /plan-eng-review — they overlap Superpowers'"'"' planning lane and create conflicts.
 
 ## Wiki
 
@@ -934,18 +1032,22 @@ If the project has no `.planning/` wiki yet, run `poc-wiki-init` first.
 
 For any product, PoC, or feature development work, follow this pipeline in order:
 
-EXPAND → REFINE → SURVEY → PLAN → BUILD → POLISH → DEFEND → HANDOFF
+EXPAND → REFINE → SURVEY → PLAN → PRE-MORTEM → BUILD → POLISH → DEFEND → HANDOFF
 
-| Phase | Skills to invoke |
-|-------|-----------------|
-| Expand | /office-hours, /plan-ceo-review |
-| Refine | superpowers:brainstorming |
-| Survey | prior-art-survey |
-| Plan | superpowers:writing-plans |
-| Build | superpowers:subagent-driven-development, /design-shotgun, /design-html |
-| Polish | /qa, /design-review, /cso |
-| Defend | second-opinion, stakeholder-pack |
-| Handoff | /document-release, handoff-snapshot |
+Phase gates are enforced by artifact existence. session-start checks the filesystem
+before dispatching — it does not trust the phase tracker alone.
+
+| Phase | Skills to invoke | Gate artifact |
+|-------|-----------------|---------------|
+| Expand | /office-hours, /plan-ceo-review | (entry point) |
+| Refine | superpowers:brainstorming | .planning/vision/ has ≥1 file |
+| Survey | prior-art-survey | .planning/vision/brainstorm-*.md exists |
+| Plan | superpowers:writing-plans | .planning/prior-art/ has ≥1 file |
+| Pre-mortem | pre-mortem | .planning/plans/ has ≥1 .md file |
+| Build | superpowers:subagent-driven-development, /design-shotgun, /design-html | .planning/decisions/pre-mortem-*.md exists |
+| Polish | /qa, /design-review, /cso | BUILD complete (confirmed by user or git log) |
+| Defend | second-opinion, stakeholder-pack | .planning/reviews/ has qa, security, design files |
+| Handoff | /document-release, handoff-snapshot | .planning/reviews/second-opinion-*.md exists |
 
 Do NOT use: /autoplan, /plan-eng-review — they conflict with superpowers:writing-plans.
 
@@ -981,7 +1083,7 @@ if [ "$SKIP_VERIFY" = false ]; then
   all_ok=true
 
   # Check all skills exist
-  ALL_SKILLS=("${GSTACK_SKILLS[@]}" poc-wiki-init handoff-snapshot second-opinion stakeholder-pack session-start "${PRIOR_ART_SKILLS[@]}")
+  ALL_SKILLS=("${GSTACK_SKILLS[@]}" poc-wiki-init handoff-snapshot second-opinion stakeholder-pack session-start pre-mortem "${PRIOR_ART_SKILLS[@]}")
   for skill in "${ALL_SKILLS[@]}"; do
     if [ -d "${SKILLS_DIR}/${skill}" ]; then
       info "  ✓ ${skill}"
