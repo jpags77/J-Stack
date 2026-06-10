@@ -105,6 +105,7 @@ The output isn't just research — it becomes the "what else did you consider" s
 | `session-start` | Session orientation ritual. Fires automatically at session start — reads `CRITICAL_FACTS.md` first (~120 tokens), then `status.md`, confirms fidelity target, surfaces scope changes, enforces phase gates by checking artifact existence, and dispatches to the correct phase. The filesystem is authoritative; the phase tracker is advisory. |
 | `poc-wiki-init` | Bootstraps the `.planning/` wiki at project start. Creates `CRITICAL_FACTS.md`, `status.md`, `decisions/`, and schema files for Claude Code, Codex, Cursor, and ChatGPT. Asks the fidelity target question upfront. Idempotent — safe to run again. |
 | `handoff-snapshot` | Rewrites `status.md` with the current project state, writes a timestamped snapshot to `.planning/handoffs/` with context, decisions, next steps, and a paste-ready continuation prompt for the next tool. |
+| `ux-pattern-research` | Benchmarks a specific UI component or interaction against industry patterns (Jira, Linear, GitHub, Figma, etc.) before committing to a direction. Spawns an Explore subagent and returns 3–5 actionable recommendations with an "Avoid" section. Run before `/design-shotgun` — informs direction choices with evidence rather than intuition. |
 | `pre-mortem` | Stress-tests the approach *before the spec is written*. Reads brainstorm + prior art, imagines the project has already failed, and reverse-engineers the top 5 failure modes. Gates PLAN — `session-start` will not dispatch to `writing-plans` until a pre-mortem file exists in `.planning/decisions/`. The `/j-stack-plan` workflow runs this as phase 3 of 4. |
 | `second-opinion` | Dispatches an artifact to Codex CLI for independent review, synthesizes a convergence/divergence matrix, and extracts architectural decisions as ADRs into `.planning/decisions/`. Two AI vendors reviewing the same artifact independently. |
 | `stakeholder-pack` | Aggregates vision, prior-art, decisions, security, and cross-model review outputs into a single executive-ready document. Pre-answers the five standard enterprise PoC questions. |
@@ -162,7 +163,7 @@ Phase gates are enforced by artifact existence. `session-start` checks the files
 | **Survey** | `prior-art-survey` | `brainstorm-*.md` exists | Three parallel scouts: OSS, libraries, patterns. Answers "did you try X" before it's asked. |
 | **Pre-mortem** | `pre-mortem` | `.planning/prior-art/` has ≥1 file | Assumes failure, reverse-engineers top 5 failure modes *before the spec exists*. Filed to `.planning/decisions/`. |
 | **Plan** | `writing-plans` (SP) | `pre-mortem-*.md` exists | Full spec, Opus-reviewed, incorporating brainstorm + prior art + pre-mortem mitigations. Locked to `.planning/plans/`. |
-| **Build** | `subagent-driven-dev` (SP), `/design-shotgun`, `/design-html` | `.planning/plans/` has ≥1 file | TDD execution. Parallel subagents in isolated worktrees, implementing against the spec. |
+| **Build** | `subagent-driven-dev` (SP); UI: `ux-pattern-research` → `/design-shotgun` → `/design-html` | `.planning/plans/` has ≥1 file | TDD execution. For UI work, benchmark patterns before exploring directions. |
 | **Polish** | `/qa`, `/design-review`, `/cso` | BUILD complete | Audit against spec, design review, OWASP/STRIDE security analysis. |
 | **Defend** | `second-opinion`, `stakeholder-pack` | qa, security, design reviews exist | Codex independently reviews Claude's output. Findings synthesized. Stakeholder pack assembled. |
 | **Handoff** | `/document-release`, `handoff-snapshot` | `second-opinion-*.md` exists | Docs generated from diff. Wiki snapshot written for cross-tool resumption. |
@@ -215,8 +216,9 @@ BUILD  (session-start will not dispatch here until .planning/plans/ has a spec)
   ├── superpowers:test-driven-development      ← red-green-refactor enforced
   ├── superpowers:verification-before-completion ← gates done claims
   └── superpowers:systematic-debugging         ← invoked when stuck
-  /design-shotgun  [gstack · sonnet]  ← UI: explore directions
-  /design-html     [gstack · sonnet]  ← UI: execute direction
+  ux-pattern-research  [custom · sonnet]  ← UI: benchmark component against industry patterns
+  /design-shotgun      [gstack · sonnet]  ← UI: explore directions informed by research
+  /design-html         [gstack · sonnet]  ← UI: execute chosen direction
 
 POLISH  (session-start checks log.md and dispatches to first pending)
   /qa             [gstack · sonnet]

@@ -851,7 +851,9 @@ Once the gate for the target phase is satisfied, invoke immediately — do not a
 | PRE-MORTEM | `pre-mortem` |
 | PLAN | `superpowers:writing-plans` |
 | BUILD | `superpowers:subagent-driven-development` |
-| BUILD — UI work | `/design-shotgun` or `/design-html` depending on whether directions are locked |
+| BUILD — UI work (component decision pending) | `ux-pattern-research` |
+| BUILD — UI work (research done, directions not locked) | `/design-shotgun` |
+| BUILD — UI work (direction locked, building) | `/design-html` |
 | POLISH — qa pending | `/qa` |
 | POLISH — security pending | `/cso` |
 | POLISH — design review pending | `/design-review` |
@@ -863,7 +865,95 @@ Once the gate for the target phase is satisfied, invoke immediately — do not a
 Gates are not optional. If the user wants to skip a gate, they must say so explicitly. Do not offer to skip gates proactively.
 SKILL_EOF
 
-# 2.6 pre-mortem
+# 2.6 ux-pattern-research
+install_skill "ux-pattern-research" <<'SKILL_EOF'
+---
+name: ux-pattern-research
+description: Use when facing a UI design decision and needing validation against industry patterns — field state changes, inline notifications, change indicators, navigation affordances, error states, or any "how do tools like Jira/Linear/GitHub handle X?" question before building or revising a mockup. Run before /design-shotgun to inform direction choices with evidence.
+model: sonnet
+---
+
+# UX Pattern Research
+
+## Overview
+
+Spawn a focused research agent to benchmark a specific UI problem against industry patterns, then return 3–5 concrete, pointed recommendations — not generic advice. The output should be immediately actionable in a mockup or spec.
+
+## When to Use
+
+- You're designing a UI element and want to know the established pattern before building
+- The user asks "what's best practice for X?" or "how should Y look?"
+- You're about to run `/design-shotgun` and want pattern validation first
+- A design decision has trade-offs you want to surface with evidence
+
+**Don't use for:** full design reviews (use `/design-review`), accessibility audits, or broad product strategy.
+
+## Pattern
+
+### 1. Frame the research query
+
+Identify three things before spawning:
+- **The element:** what specific component or interaction (e.g., "field update indicator")
+- **The trigger:** what event causes the change (e.g., "AI re-classifies a value in place")
+- **Reference apps:** 2–4 tools in the same domain tier (e.g., Jira, Linear, Salesforce, GitHub, Figma)
+
+### 2. Spawn the research agent
+
+```
+Agent({
+  subagent_type: "Explore",
+  prompt: `
+Research UX best practices for: [THE ELEMENT + TRIGGER]
+
+Context: [1–2 sentences on what the UI is and who uses it]
+
+Research questions:
+- How do [REF APPS] handle this pattern?
+- What visual affordances signal [the change/state] without verbosity?
+- What patterns should be avoided and why?
+
+Search: "[element] UX best practices", "[pattern name] dashboard UI",
+        "[reference app] [element] design pattern"
+
+Return 4–5 concrete, actionable recommendations. Include one "Avoid" section.
+  `
+})
+```
+
+### 3. Synthesize and apply
+
+After the agent returns:
+- Map each recommendation to the specific component in the mockup
+- Flag any that conflict with the existing visual language
+- Present as numbered recommendations with a single "Avoid" list
+- Offer to update the mockup or feed findings into `/design-shotgun` immediately
+
+## Output Format
+
+```
+**1. [Recommendation name]**
+What: [1 sentence]
+Why: [reference app or research backing]
+Apply: [exactly what to change in this mockup]
+
+...
+
+**Avoid**
+- [pattern] — [why: reads as X, implies Y]
+```
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---|---|
+| Returning generic UX theory | Anchor every rec to a named reference app or study |
+| Too many recommendations | Cap at 5; more dilutes the signal |
+| No "Avoid" section | Always include — it's often the most useful part |
+| Skipping the "Apply" line | Each rec must map to *this* mockup, not the abstract problem |
+| Spawning without reference apps | Name the apps in the prompt — vague searches return vague results |
+SKILL_EOF
+
+# 2.8 pre-mortem
 install_skill "pre-mortem" <<'SKILL_EOF'
 ---
 name: pre-mortem
@@ -973,7 +1063,7 @@ Multiple skill packs are installed. Each owns a specific phase of the workflow:
 - **Prior art (Survey phase):** prior-art-survey (custom)
 - **Pre-mortem (Pre-mortem phase):** pre-mortem (custom) — gates PLAN
 - **Planning (Plan phase):** Superpowers writing-plans — gates BUILD
-- **Building (Build phase):** Superpowers subagent-driven-development, with /design-shotgun + /design-html for UI work
+- **Building (Build phase):** Superpowers subagent-driven-development; for UI work: ux-pattern-research → /design-shotgun → /design-html
 - **Polishing (Polish phase):** /qa, /design-review, /cso (gstack)
 - **Defending (Defend phase):** second-opinion, stakeholder-pack (custom)
 - **Handoff:** /document-release (gstack), handoff-snapshot (custom)
@@ -1047,7 +1137,7 @@ workflow (requires Claude Code v2.1.154+ with dynamic workflows enabled).
 | Survey | prior-art-survey | .planning/vision/brainstorm-*.md exists |
 | Pre-mortem | pre-mortem | .planning/prior-art/ has ≥1 file |
 | Plan | superpowers:writing-plans | .planning/decisions/pre-mortem-*.md exists |
-| Build | superpowers:subagent-driven-development, /design-shotgun, /design-html | .planning/plans/ has ≥1 .md file |
+| Build | superpowers:subagent-driven-development; UI: ux-pattern-research → /design-shotgun → /design-html | .planning/plans/ has ≥1 .md file |
 | Polish | /qa, /design-review, /cso | BUILD complete (confirmed by user or git log) |
 | Defend | second-opinion, stakeholder-pack | .planning/reviews/ has qa, security, design files |
 | Handoff | /document-release, handoff-snapshot | .planning/reviews/second-opinion-*.md exists |
@@ -1086,7 +1176,7 @@ if [ "$SKIP_VERIFY" = false ]; then
   all_ok=true
 
   # Check all skills exist
-  ALL_SKILLS=("${GSTACK_SKILLS[@]}" poc-wiki-init handoff-snapshot second-opinion stakeholder-pack session-start pre-mortem "${PRIOR_ART_SKILLS[@]}")
+  ALL_SKILLS=("${GSTACK_SKILLS[@]}" poc-wiki-init handoff-snapshot second-opinion stakeholder-pack session-start ux-pattern-research pre-mortem "${PRIOR_ART_SKILLS[@]}")
   for skill in "${ALL_SKILLS[@]}"; do
     if [ -d "${SKILLS_DIR}/${skill}" ]; then
       info "  ✓ ${skill}"
