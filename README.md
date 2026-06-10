@@ -105,7 +105,7 @@ The output isn't just research — it becomes the "what else did you consider" s
 | `session-start` | Session orientation ritual. Fires automatically at session start — reads `CRITICAL_FACTS.md` first (~120 tokens), then `status.md`, confirms fidelity target, surfaces scope changes, enforces phase gates by checking artifact existence, and dispatches to the correct phase. The filesystem is authoritative; the phase tracker is advisory. |
 | `poc-wiki-init` | Bootstraps the `.planning/` wiki at project start. Creates `CRITICAL_FACTS.md`, `status.md`, `decisions/`, and schema files for Claude Code, Codex, Cursor, and ChatGPT. Asks the fidelity target question upfront. Idempotent — safe to run again. |
 | `handoff-snapshot` | Rewrites `status.md` with the current project state, writes a timestamped snapshot to `.planning/handoffs/` with context, decisions, next steps, and a paste-ready continuation prompt for the next tool. |
-| `pre-mortem` | Stress-tests a locked plan before any code runs. Imagines the project has already failed and reverse-engineers the top 5 failure modes across technical, scope, assumption, process, and stakeholder dimensions. Gates BUILD — `session-start` will not dispatch to `subagent-driven-development` until a pre-mortem file exists in `.planning/decisions/`. |
+| `pre-mortem` | Stress-tests the approach *before the spec is written*. Reads brainstorm + prior art, imagines the project has already failed, and reverse-engineers the top 5 failure modes. Gates PLAN — `session-start` will not dispatch to `writing-plans` until a pre-mortem file exists in `.planning/decisions/`. The `/j-stack-plan` workflow runs this as phase 3 of 4. |
 | `second-opinion` | Dispatches an artifact to Codex CLI for independent review, synthesizes a convergence/divergence matrix, and extracts architectural decisions as ADRs into `.planning/decisions/`. Two AI vendors reviewing the same artifact independently. |
 | `stakeholder-pack` | Aggregates vision, prior-art, decisions, security, and cross-model review outputs into a single executive-ready document. Pre-answers the five standard enterprise PoC questions. |
 
@@ -150,19 +150,19 @@ When Anthropic limits hit mid-engagement — and they will — `handoff-snapshot
 ### The pipeline
 
 ```
-EXPAND → REFINE → SURVEY → PLAN → PRE-MORTEM → BUILD → POLISH → DEFEND → HANDOFF
+EXPAND → REFINE → SURVEY → PRE-MORTEM → PLAN → BUILD → POLISH → DEFEND → HANDOFF
 ```
 
-Phase gates are enforced by artifact existence. `session-start` checks the filesystem before dispatching to each phase — it cannot be talked into skipping a gate.
+Phase gates are enforced by artifact existence. `session-start` checks the filesystem before dispatching — it cannot be talked into skipping a gate. Run `/j-stack-plan` to execute REFINE → SURVEY → PRE-MORTEM → PLAN as a single deterministic workflow (requires Claude Code v2.1.154+ with dynamic workflows enabled).
 
 | Phase | Skills | Gate | What happens |
 |-------|--------|------|-------------|
 | **Expand** | `/office-hours`, `/plan-ceo-review` | (entry point) | Founder-lens reframe. Are we solving the right problem? What would a 10x founder cut? |
 | **Refine** | `brainstorm` (SP) | `.planning/vision/` has ≥1 file | Structured pressure-testing of the approach. Output filed to `.planning/vision/brainstorm-*.md`. |
 | **Survey** | `prior-art-survey` | `brainstorm-*.md` exists | Three parallel scouts: OSS, libraries, patterns. Answers "did you try X" before it's asked. |
-| **Plan** | `writing-plans` (SP) | `.planning/prior-art/` has ≥1 file | Full implementation spec, Opus-reviewed. Locked to `.planning/plans/`. |
-| **Pre-mortem** | `pre-mortem` | `.planning/plans/` has ≥1 file | Assumes failure, reverse-engineers top 5 failure modes. Filed to `.planning/decisions/`. |
-| **Build** | `subagent-driven-dev` (SP), `/design-shotgun`, `/design-html` | `pre-mortem-*.md` exists | TDD execution. Parallel subagents in isolated worktrees, implementing against the spec. |
+| **Pre-mortem** | `pre-mortem` | `.planning/prior-art/` has ≥1 file | Assumes failure, reverse-engineers top 5 failure modes *before the spec exists*. Filed to `.planning/decisions/`. |
+| **Plan** | `writing-plans` (SP) | `pre-mortem-*.md` exists | Full spec, Opus-reviewed, incorporating brainstorm + prior art + pre-mortem mitigations. Locked to `.planning/plans/`. |
+| **Build** | `subagent-driven-dev` (SP), `/design-shotgun`, `/design-html` | `.planning/plans/` has ≥1 file | TDD execution. Parallel subagents in isolated worktrees, implementing against the spec. |
 | **Polish** | `/qa`, `/design-review`, `/cso` | BUILD complete | Audit against spec, design review, OWASP/STRIDE security analysis. |
 | **Defend** | `second-opinion`, `stakeholder-pack` | qa, security, design reviews exist | Codex independently reviews Claude's output. Findings synthesized. Stakeholder pack assembled. |
 | **Handoff** | `/document-release`, `handoff-snapshot` | `second-opinion-*.md` exists | Docs generated from diff. Wiki snapshot written for cross-tool resumption. |
@@ -196,15 +196,20 @@ SURVEY  (session-start will not dispatch here until brainstorm-*.md exists)
   ├── prior-art-library-scout  [custom · sonnet]  ← parallel
   └── prior-art-patterns-scout [custom · sonnet]  ← parallel
 
-PLAN
+PRE-MORTEM  (session-start gates PLAN on this — runs before spec exists)
+  pre-mortem  [custom · opus]
+  └── output filed to .planning/decisions/pre-mortem-<date>.md  ← PLAN gate checks for this
+
+PLAN  (session-start will not dispatch here until pre-mortem-*.md exists)
   superpowers:writing-plans  [superpowers · opus]
   └── output filed to .planning/plans/spec-vN.md  ← BUILD gate checks for this
 
-PRE-MORTEM  (session-start gates BUILD on this)
-  pre-mortem  [custom · opus]
-  └── output filed to .planning/decisions/pre-mortem-<date>.md
+────────────────────────────────────────────────
+  /j-stack-plan  [workflow]  ← runs all four above phases deterministically
+  Requires Claude Code v2.1.154+ with dynamic workflows enabled
+────────────────────────────────────────────────
 
-BUILD  (session-start will not dispatch here until pre-mortem-*.md exists)
+BUILD  (session-start will not dispatch here until .planning/plans/ has a spec)
   superpowers:subagent-driven-development  [superpowers · sonnet]
   ├── superpowers:using-git-worktrees          ← isolated branch per subagent
   ├── superpowers:test-driven-development      ← red-green-refactor enforced

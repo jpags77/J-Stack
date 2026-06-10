@@ -829,9 +829,9 @@ Then enforce phase gates and dispatch. **The filesystem is authoritative — the
 |---|---|---|
 | REFINE | `.planning/vision/` contains ≥1 file | `/office-hours` (then `/plan-ceo-review`) |
 | SURVEY | `.planning/vision/` contains a file matching `brainstorm-*.md` | `superpowers:brainstorming` |
-| PLAN | `.planning/prior-art/` contains ≥1 file | `prior-art-survey` |
-| PRE-MORTEM | `.planning/plans/` contains ≥1 .md file | `superpowers:writing-plans` |
-| BUILD | `.planning/decisions/pre-mortem-*.md` exists | `pre-mortem` |
+| PRE-MORTEM | `.planning/prior-art/` contains ≥1 file | `prior-art-survey` |
+| PLAN | `.planning/decisions/pre-mortem-*.md` exists | `pre-mortem` |
+| BUILD | `.planning/plans/` contains ≥1 .md file | `superpowers:writing-plans` |
 | POLISH | User confirms BUILD is complete or git log shows commits since spec date | Ask user to confirm |
 | DEFEND | `.planning/reviews/` contains files matching `qa-*`, `security-*`, and `design-*` | Invoke first missing polish skill |
 | HANDOFF | `.planning/reviews/second-opinion-*.md` and `.planning/stakeholder-pack/` each contain ≥1 file | Invoke first missing defend skill |
@@ -848,8 +848,8 @@ Once the gate for the target phase is satisfied, invoke immediately — do not a
 | EXPAND (office-hours done, ceo-review pending) | `/plan-ceo-review` |
 | REFINE | `superpowers:brainstorming` |
 | SURVEY | `prior-art-survey` |
-| PLAN | `superpowers:writing-plans` |
 | PRE-MORTEM | `pre-mortem` |
+| PLAN | `superpowers:writing-plans` |
 | BUILD | `superpowers:subagent-driven-development` |
 | BUILD — UI work | `/design-shotgun` or `/design-html` depending on whether directions are locked |
 | POLISH — qa pending | `/qa` |
@@ -867,7 +867,7 @@ SKILL_EOF
 install_skill "pre-mortem" <<'SKILL_EOF'
 ---
 name: pre-mortem
-description: Stress-tests a locked implementation plan before any code is written. Assumes the project has already failed and reverse-engineers the top failure modes. Runs between PLAN and BUILD — session-start will not dispatch to BUILD until a pre-mortem file exists in .planning/decisions/. Requires a spec file in .planning/plans/ to activate.
+description: Stress-tests the project approach before the spec is written. Reads brainstorm and prior-art output, imagines the project has already failed, and identifies top failure modes so the plan can be designed to address them. Runs between SURVEY and PLAN — session-start will not dispatch to PLAN until a pre-mortem file exists in .planning/decisions/.
 model: opus
 ---
 
@@ -875,31 +875,35 @@ model: opus
 
 ## When to activate
 
-Run after `superpowers:writing-plans` has produced a locked spec in `.planning/plans/`, and before `superpowers:subagent-driven-development` begins any implementation. `session-start` will invoke this automatically when a spec exists but no `pre-mortem-*.md` exists in `.planning/decisions/`.
+Run after `prior-art-survey` has filed output to `.planning/prior-art/`, and before `superpowers:writing-plans` writes the spec. `session-start` will invoke this automatically when prior-art files exist but no `pre-mortem-*.md` exists in `.planning/decisions/`.
+
+Can also run standalone against an existing spec if you want post-planning failure analysis — in that case it reads `.planning/plans/` instead.
 
 ## Why this exists
 
-Plans that survive a pre-mortem are better plans. The technique assumes failure has already happened, then works backwards to the most plausible causes. This surfaces risks that forward-looking planning misses — because forward-looking planning is optimistic by nature.
+Plans designed with failure modes in mind are better than plans patched afterwards. Running this *before* the spec means the spec addresses the risks from the start. The technique assumes failure has already happened, then works backwards.
 
-This is distinct from `/office-hours` (which reframes the problem) and `/plan-ceo-review` (which challenges scope). Both of those run before the spec exists. This runs after — against the actual implementation plan.
+This is distinct from `/office-hours` (problem reframe) and `/plan-ceo-review` (scope challenge), which run before brainstorming. This runs after brainstorming and prior art, with concrete context about what we are building and what alternatives exist.
 
 ## Process
 
-### 1. Read the spec
+### 1. Identify context source
 
-Read the most recent `.md` file in `.planning/plans/`. If none exists, halt: "No spec found in `.planning/plans/`. Run `superpowers:writing-plans` before `pre-mortem`."
+- `.planning/prior-art/` has files → **pre-planning mode**: use brainstorm + prior art (the normal pipeline path).
+- `.planning/prior-art/` is empty but `.planning/plans/` has files → **post-spec mode**: use the spec.
+- Neither exists: halt — "No prior-art or spec found. Run the appropriate upstream phase first."
 
 ### 2. Assume failure
 
-Frame: "It is 6 months from now. This project launched and failed. The failure was significant enough that stakeholders are asking what went wrong. Work backwards from that assumed failure to identify the most plausible causes."
+Frame: "The project has launched and failed. Work backwards to the most plausible causes."
 
-Generate the top 5 failure modes across these categories:
+Generate the top 5 failure modes across:
 
-- **Technical:** Implementation assumptions that proved wrong; complexity underestimated; integration failures; performance cliffs; edge cases the spec didn't cover.
-- **Scope:** Features that crept in; the core use case that wasn't actually the real problem; definition of done that shifted after build began.
-- **Assumptions:** External dependencies that weren't available; user behavior that differed from the spec's assumptions; data quality that didn't hold.
-- **Process:** Subagent coordination failures; spec drift mid-implementation; verification skipped under time pressure.
-- **Stakeholder:** Demo that didn't match what was asked for; security or compliance finding that blocked adoption.
+- **Technical:** Wrong assumptions; underestimated complexity; integration failures; performance cliffs; uncovered edge cases.
+- **Scope:** Feature creep; wrong core use case; definition of done that shifted after build began.
+- **Assumptions:** External dependencies unavailable; user behaviour differed; data quality didn't hold.
+- **Process:** Spec drift mid-build; verification skipped; subagent coordination failures.
+- **Stakeholder:** Demo missed the ask; security or compliance finding blocked adoption.
 
 ### 3. For each failure mode, produce
 
@@ -907,40 +911,36 @@ Generate the top 5 failure modes across these categories:
 ### [N]. <failure mode name>
 
 **Category:** technical / scope / assumptions / process / stakeholder
-**How it manifests:** [what the failure looks like when it happens]
+**How it manifests:** [what the failure looks like]
 **Likelihood:** high / medium / low
-**Signal to watch for:** [early warning during BUILD or POLISH]
-**Mitigation:** [what to add, remove, or change in the spec to reduce this risk]
+**Early warning signal:** [what to watch for during BUILD]
+**Mitigation:** [what the plan must include to address this]
 ```
 
 ### 4. Net assessment
 
-After the five failure modes:
-
 ```markdown
 ## Net assessment
 
-**Spec changes recommended:** yes / no
-[If yes: specific changes — reference exact spec sections. Be precise.]
-
-**Proceed to BUILD:** yes / yes with changes / no — revisit plan
+**Non-negotiables for the plan:** [what the spec must address to be credible]
+**Proceed to PLAN:** yes / yes with these constraints / no — revisit approach
 ```
 
-If spec changes are recommended, surface them to the user before filing. Do not modify the spec unilaterally — spec changes belong to `superpowers:writing-plans`.
+If the assessment is "no — revisit approach", surface the issues to the user and halt. Do not invoke writing-plans until confirmed.
 
 ### 5. File output
 
 Write to `.planning/decisions/pre-mortem-<date>.md`. Update `.planning/index.md`. Append to `.planning/log.md`:
 
-`## [timestamp] pre-mortem | <proceed / proceed-with-changes / revisit-plan>`
+`## [timestamp] pre-mortem | <proceed / proceed-with-constraints / revisit-approach>`
 
 ### 6. Output to user
 
-Show the full pre-mortem in the conversation. If the net assessment is "proceed with changes", list the changes needed and confirm with the user before BUILD begins.
+Show the full pre-mortem. `session-start` will not dispatch to PLAN until this file exists.
 
 ## Output
 
-Pre-mortem document filed to `.planning/decisions/`. `session-start` will not dispatch to BUILD until this file exists.
+Pre-mortem document in `.planning/decisions/`. The PLAN gate checks for this file.
 SKILL_EOF
 
 # ─── Phase 2.5: Prior-art research skills ─────────────────────────────────────
@@ -971,8 +971,8 @@ Multiple skill packs are installed. Each owns a specific phase of the workflow:
 - **Front-end scoping (Expand phase):** /office-hours, /plan-ceo-review (gstack)
 - **Refining (Refine phase):** Superpowers brainstorming
 - **Prior art (Survey phase):** prior-art-survey (custom)
-- **Planning (Plan phase):** Superpowers writing-plans
-- **Pre-mortem (Pre-mortem phase):** pre-mortem (custom) — gates BUILD
+- **Pre-mortem (Pre-mortem phase):** pre-mortem (custom) — gates PLAN
+- **Planning (Plan phase):** Superpowers writing-plans — gates BUILD
 - **Building (Build phase):** Superpowers subagent-driven-development, with /design-shotgun + /design-html for UI work
 - **Polishing (Polish phase):** /qa, /design-review, /cso (gstack)
 - **Defending (Defend phase):** second-opinion, stakeholder-pack (custom)
@@ -1032,19 +1032,22 @@ If the project has no `.planning/` wiki yet, run `poc-wiki-init` first.
 
 For any product, PoC, or feature development work, follow this pipeline in order:
 
-EXPAND → REFINE → SURVEY → PLAN → PRE-MORTEM → BUILD → POLISH → DEFEND → HANDOFF
+EXPAND → REFINE → SURVEY → PRE-MORTEM → PLAN → BUILD → POLISH → DEFEND → HANDOFF
 
 Phase gates are enforced by artifact existence. session-start checks the filesystem
 before dispatching — it does not trust the phase tracker alone.
+
+Use /j-stack-plan to run REFINE → SURVEY → PRE-MORTEM → PLAN as a single deterministic
+workflow (requires Claude Code v2.1.154+ with dynamic workflows enabled).
 
 | Phase | Skills to invoke | Gate artifact |
 |-------|-----------------|---------------|
 | Expand | /office-hours, /plan-ceo-review | (entry point) |
 | Refine | superpowers:brainstorming | .planning/vision/ has ≥1 file |
 | Survey | prior-art-survey | .planning/vision/brainstorm-*.md exists |
-| Plan | superpowers:writing-plans | .planning/prior-art/ has ≥1 file |
-| Pre-mortem | pre-mortem | .planning/plans/ has ≥1 .md file |
-| Build | superpowers:subagent-driven-development, /design-shotgun, /design-html | .planning/decisions/pre-mortem-*.md exists |
+| Pre-mortem | pre-mortem | .planning/prior-art/ has ≥1 file |
+| Plan | superpowers:writing-plans | .planning/decisions/pre-mortem-*.md exists |
+| Build | superpowers:subagent-driven-development, /design-shotgun, /design-html | .planning/plans/ has ≥1 .md file |
 | Polish | /qa, /design-review, /cso | BUILD complete (confirmed by user or git log) |
 | Defend | second-opinion, stakeholder-pack | .planning/reviews/ has qa, security, design files |
 | Handoff | /document-release, handoff-snapshot | .planning/reviews/second-opinion-*.md exists |
