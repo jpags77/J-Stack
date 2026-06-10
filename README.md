@@ -18,7 +18,7 @@ That survey found two projects already doing the hard parts better than a greenf
 - **[gstack](https://github.com/garrytan/gstack)** by [@garrytan](https://github.com/garrytan) — a 40+ skill community pack covering the gaps Superpowers doesn't: founder-lens scoping, UI design workflow, security review, and QA.
 - **[Andrej Karpathy](https://karpathy.ai)**'s second brain concept — the idea of a persistent, structured markdown wiki that outlives any single session or tool. Every decision, artifact, and handoff is written to `.planning/`. When AI usage limits force a tool switch mid-engagement, the new tool reads the wiki and resumes without re-explanation. The wiki speaks every tool's native language (CLAUDE.md, AGENTS.md, .cursor/rules, chatgpt-brief.md). This is the memory layer that makes the whole stack resilient.
 
-j-stack is an integration layer on top of these foundations. It doesn't replace them — it cherry-picks the right skills from each, adds five custom skills that fill remaining gaps (prior art research, cross-vendor review, stakeholder packaging, session orientation, and the wiki itself), wires them into a coherent pipeline, and configures session behavior so the whole thing runs without manual orchestration.
+j-stack is an integration layer on top of these foundations. It doesn't replace them — it cherry-picks the right skills from each, adds seven custom skills that fill remaining gaps (prior art research, UI pattern research, pre-mortem analysis, cross-vendor review, stakeholder packaging, session orientation, and the wiki itself), wires them into a coherent pipeline, and configures session behavior so the whole thing runs without manual orchestration.
 
 The insight Superpowers and gstack share: **AI agents are powerful but undisciplined.** The value isn't the models — it's the process imposed on them. j-stack applies that principle earlier in the lifecycle than either project does alone, covering the full arc from "are we solving the right problem?" through a security-reviewed, cross-vendor-validated, stakeholder-ready deliverable.
 
@@ -98,7 +98,7 @@ The output isn't just research — it becomes the "what else did you consider" s
 
 ---
 
-### Five custom skills — what doesn't exist anywhere else
+### Seven custom skills — what doesn't exist anywhere else
 
 | Skill | What it does |
 |-------|-------------|
@@ -263,7 +263,7 @@ j-stack produces artifacts that answer these before the meeting:
 | Question | Artifact |
 |----------|----------|
 | Why did you build it this way? | Vision doc from `/office-hours` + `brainstorm` |
-| What else did you consider? | `prior-art-survey` output (OSS, libraries, patterns) |
+| What else did you consider? | `prior-art-survey` output + ADRs in `.planning/decisions/` |
 | Is it secure? | `/cso` OWASP/STRIDE security review |
 | Does it actually work? | `/qa` audit against spec + TDD test suite |
 | Why should I trust one AI vendor? | `second-opinion` cross-vendor convergence matrix |
@@ -295,7 +295,7 @@ bash install.sh --skip-codex    # skip Codex CLI check (if not using second-opin
 bash install.sh --skip-verify   # skip post-install verification
 ```
 
-The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/` with model directives injected, installs the 5 custom skills, writes the project `CLAUDE.md` lane configuration, and creates a global `~/.claude/CLAUDE.md` that makes j-stack the session authority in every project.
+The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/` with model directives injected, installs the 7 custom skills, writes the project `CLAUDE.md` lane configuration, and creates a global `~/.claude/CLAUDE.md` that makes j-stack the session authority in every project.
 
 ### Starting a new PoC or improving an existing repo
 
@@ -332,6 +332,13 @@ The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/
 ```
 
 **Iterative development:** Scope changes mid-engagement bump the iteration, identify which phase to re-enter, and archive the prior plan. You don't restart the pipeline; you re-enter at the right phase with the new input.
+
+**Running the planning pipeline as a workflow:**
+```
+/j-stack-plan                          # reads context from .planning/
+/j-stack-plan "build X for Y use case" # injects an additional brief
+```
+Requires Claude Code v2.1.154+ with dynamic workflows enabled (`/config → Dynamic workflows`). Runs REFINE → SURVEY → PRE-MORTEM → PLAN as a single deterministic background job — brainstorming and prior-art scouts fire in the right order, pre-mortem runs before the spec exists, and writing-plans reads all three before locking the spec. Monitor progress with `/workflows`.
 
 ### What's NOT installed — and why
 
