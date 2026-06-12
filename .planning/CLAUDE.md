@@ -19,3 +19,14 @@ This project uses a markdown wiki at .planning/ as its single source of truth.
 When you produce notable output (a decision, a comparison, an analysis), file it back into the wiki as a new page and update index.md. The wiki compounds rather than just accumulates.
 
 When approaching context limits or about to switch tools, run handoff-snapshot.
+
+## Work checkpoints
+
+After significant code interactions, create a durable checkpoint before switching tasks:
+
+1. Commit the coherent git diff locally.
+2. Update `.planning/` with notable decisions, review output, or changed state.
+3. Append `.planning/log.md`.
+4. Run `handoff-snapshot`.
+
+Do not push to GitHub automatically. Push only when the user asks or an explicit publish workflow is active.

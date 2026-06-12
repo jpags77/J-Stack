@@ -104,7 +104,7 @@ The output isn't just research — it becomes the "what else did you consider" s
 |-------|-------------|
 | `session-start` | Session orientation ritual. Run at the start of every session — reads wiki state, confirms fidelity target, surfaces scope changes, handles iteration bumps, and declares the session goal before any work begins. Prevents silent drift between sessions. |
 | `poc-wiki-init` | Bootstraps the `.planning/` wiki at project start. Asks the fidelity target question upfront, generates schema files for Claude Code, Codex, Cursor, and ChatGPT. Idempotent — safe to run again. |
-| `handoff-snapshot` | Writes a timestamped snapshot to `.planning/handoffs/` with context, decisions, next steps, and a paste-ready continuation prompt for the next tool. |
+| `handoff-snapshot` | Writes a timestamped blackboard snapshot to `.planning/handoffs/` with typed state, claims, provenance, conflicts, decisions, next steps, touched artifacts, and a paste-ready continuation prompt for the next tool. |
 | `second-opinion` | Dispatches an artifact to Codex CLI for independent review, then synthesizes a convergence/divergence matrix. Two AI vendors reviewing the same artifact independently. |
 | `stakeholder-pack` | Aggregates vision, prior-art, security, and cross-model review outputs into a single executive-ready document. Pre-answers the five standard enterprise PoC questions. |
 
@@ -131,7 +131,9 @@ A full pipeline run spends Opus tokens where they move the needle and Haiku toke
 | `.planning/.cursor/rules` | Cursor |
 | `.planning/chatgpt-brief.md` | ChatGPT (paste-in) |
 
-When Anthropic limits hit mid-engagement — and they will — `handoff-snapshot` writes a continuation prompt to `.planning/handoffs/`. Paste it into Codex, Cursor, or ChatGPT and the session resumes from exactly where it stopped. No context lost, no re-explanation, no starting over.
+When Anthropic limits hit mid-engagement — and they will — `handoff-snapshot` writes a structured blackboard to `.planning/handoffs/`. It keeps the human continuation prompt, but also records machine-readable state: current phase, repo status, claims with provenance, confidence, open questions, conflicts between sources, and ordered next actions. Paste the continuation prompt into Codex, Cursor, or ChatGPT and the session resumes from the blackboard instead of reconstructing context from chat memory.
+
+After significant code interactions, j-stack also treats commit + wiki update + handoff as the durable checkpoint. Local commits are appropriate once the diff is coherent; GitHub pushes are intentionally explicit and should happen only when the user asks or when a publish workflow is active.
 
 ---
 
@@ -206,7 +208,7 @@ DEFEND
 
 HANDOFF
   /document-release  [gstack · sonnet]
-  handoff-snapshot   [custom · haiku]  ← also fires when switching tools
+  handoff-snapshot   [custom · haiku]  ← structured blackboard for tool switches and checkpoints
 
 SAFETY / ON-DEMAND
   /freeze  [gstack · haiku]

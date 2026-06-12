@@ -277,6 +277,17 @@ This project uses a markdown wiki at .planning/ as its single source of truth.
 When you produce notable output (a decision, a comparison, an analysis), file it back into the wiki as a new page and update index.md. The wiki compounds rather than just accumulates.
 
 When approaching context limits or about to switch tools, run handoff-snapshot.
+
+## Work checkpoints
+
+After significant code interactions, create a durable checkpoint before switching tasks:
+
+1. Commit the coherent git diff locally.
+2. Update `.planning/` with notable decisions, review output, or changed state.
+3. Append `.planning/log.md`.
+4. Run `handoff-snapshot`.
+
+Do not push to GitHub automatically. Push only when the user asks or an explicit publish workflow is active.
 ```
 
 **AGENTS.md** — schema for Codex CLI:
@@ -307,6 +318,17 @@ You are likely being invoked because of one of these reasons:
 
 In either case, your output should be filed into .planning/ as a new page and logged in log.md.
 
+## Work checkpoints
+
+After significant code interactions, create a durable checkpoint before switching tasks:
+
+1. Commit the coherent git diff locally.
+2. Update `.planning/` with notable decisions, review output, or changed state.
+3. Append `.planning/log.md`.
+4. Run `handoff-snapshot`.
+
+Do not push to GitHub automatically. Push only when the user asks or an explicit publish workflow is active.
+
 ## Claude skill mapping for Codex
 
 Claude slash commands and skills are process labels. In Codex, map them to equivalent behavior:
@@ -320,7 +342,7 @@ Claude slash commands and skills are process labels. In Codex, map them to equiv
 | `superpowers:subagent-driven-development` | Execute the plan in small, test-driven, isolated changes. |
 | `/qa`, `/design-review`, `/cso` | Verify behavior, UX, and security/risk posture in POLISH. |
 | `second-opinion` | Act as the independent reviewer and write review-ready findings. |
-| `handoff-snapshot` | Write `.planning/handoffs/<timestamp>-snapshot.md` before pausing or switching tools. |
+| `handoff-snapshot` | Write `.planning/handoffs/<timestamp>-snapshot.md` as a structured blackboard before pausing, switching tools, or checkpointing significant work. |
 ```
 
 **.cursor/rules** — schema for Cursor:
@@ -389,21 +411,92 @@ model: haiku
 
 Check `.planning/` exists. If not, run poc-wiki-init first, or report that the project isn't wiki-enabled and offer to bootstrap one.
 
-### 2. Generate snapshot
+### 2. Generate blackboard snapshot
 
 Write to `.planning/handoffs/<timestamp>-snapshot.md` with this structure:
 
 ```markdown
 # Handoff Snapshot — <timestamp>
 
-## Context summary
-[2-3 sentences: what is the user working on right now?]
+```json
+{
+  "schema": "j-stack.handoff.blackboard.v1",
+  "timestamp": "<ISO timestamp>",
+  "agent": "<tool/model/runtime writing this snapshot>",
+  "reason": "usage_limits | planned_switch | pause | checkpoint",
+  "repo": {
+    "branch": "<current branch>",
+    "head": "<git rev-parse HEAD>",
+    "dirty": true,
+    "remote": "<origin URL if present>"
+  },
+  "state": {
+    "iteration": "<from .planning/index.md>",
+    "phase": "<from .planning/index.md>",
+    "fidelity": "<from .planning/index.md>",
+    "current_task": "<one sentence>"
+  },
+  "claims": [
+    {
+      "id": "C1",
+      "claim": "<important fact a fresh agent should rely on>",
+      "status": "confirmed | assumed | stale | needs_verification",
+      "confidence": "high | medium | low",
+      "provenance": ["<file path, command, commit, PR, URL, or conversation source>"]
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D1",
+      "decision": "<decision made>",
+      "rationale": "<why>",
+      "provenance": ["<source>"]
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "X1",
+      "description": "<contradiction between sources>",
+      "preferred_source": "<source to trust now>",
+      "reason": "<why this source wins>"
+    }
+  ],
+  "open_questions": [
+    {
+      "id": "Q1",
+      "question": "<question>",
+      "owner": "user | agent | external"
+    }
+  ],
+  "next_actions": [
+    {
+      "id": "N1",
+      "action": "<specific next action>",
+      "priority": "high | medium | low",
+      "blocked_by": []
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "<file path>",
+      "kind": "plan | review | code | docs | handoff | other",
+      "status": "created | modified | referenced"
+    }
+  ]
+}
+```
 
-## Recent decisions
-[Bulleted list of decisions made in this session that aren't yet captured elsewhere in the wiki.]
+## Human summary
+[2-3 sentences: what is happening and what changed since the previous snapshot.]
+
+## Freshness and source of truth
+[Name any stale or conflicting source. If a source is known stale, say what supersedes it.]
+
+## Decisions
+[Bulleted list. Include decision IDs from the JSON block when useful.]
 
 ## Current task
-[1-2 sentences: what was the user actively trying to do when this snapshot was taken?]
+[1-2 sentences: what the user was actively trying to do when this snapshot was taken.]
 
 ## Next steps
 [Numbered list, ordered by priority. Each item should be specific enough that a fresh agent can act on it.]
@@ -414,9 +507,14 @@ Write to `.planning/handoffs/<timestamp>-snapshot.md` with this structure:
 ## Files touched this session
 [List of files modified, with one-line summary of each change.]
 
+## Verification
+[Commands run and results. If not run, say why.]
+
 ## Continuation prompt
 [A paste-ready prompt the user can drop into the next tool. Reference this handoff file by path. Keep under 200 words.]
 ```
+
+The JSON block is the blackboard. Keep it valid JSON, keep IDs stable within the file, and do not invent provenance. Use `needs_verification` when a claim is useful but not yet checked.
 
 ### 3. Append to log.md
 
@@ -829,6 +927,10 @@ This project'"'"'s source of truth lives at `.planning/`. Read `.planning/index.
 ## Cross-tool
 
 When usage limits hit, run `handoff-snapshot` and resume in Codex / Cursor / ChatGPT / Gemini. Each has its own schema file in `.planning/`.
+
+## Work checkpoints
+
+After significant code interactions, create a durable checkpoint before switching tasks: commit the coherent git diff, update `.planning/` with notable decisions or review output, append `.planning/log.md`, and run `handoff-snapshot`. Do not push to GitHub automatically; push only when the user asks or an explicit publish workflow is active.
 '
 
 PROJECT_CLAUDE="${PWD}/CLAUDE.md"
@@ -872,6 +974,10 @@ This project'"'"'s source of truth lives at `.planning/`. Read `.planning/index.
 
 When usage limits hit, run `handoff-snapshot` and resume in Codex / Cursor / ChatGPT / Gemini. Each has its own schema file in `.planning/`.
 
+## Work checkpoints
+
+After significant code interactions, create a durable checkpoint before switching tasks: commit the coherent git diff, update `.planning/` with notable decisions or review output, append `.planning/log.md`, and run `handoff-snapshot`. Do not push to GitHub automatically; push only when the user asks or an explicit publish workflow is active.
+
 ## Codex role
 
 Codex is a first-class j-stack runtime with two primary operating modes:
@@ -894,10 +1000,14 @@ Claude slash commands and skills are the source names for the process. In Codex,
 | `superpowers:subagent-driven-development` | Keep implementation scoped, isolated, test-driven, and spec-bound. |
 | `/qa`, `/design-review`, `/cso` | Treat POLISH as verification, UX review, and security/risk review. |
 | `second-opinion` | Usually means Codex is the independent reviewer; produce review artifacts, not edits. |
-| `handoff-snapshot` | Write a timestamped `.planning/handoffs/` snapshot before switching tools or pausing. |
+| `handoff-snapshot` | Write a timestamped `.planning/handoffs/` blackboard snapshot before switching tools, pausing, or checkpointing significant work. |
 '
 
 AGENTS_CODEX_APPEND='
+## Work checkpoints
+
+After significant code interactions, create a durable checkpoint before switching tasks: commit the coherent git diff, update `.planning/` with notable decisions or review output, append `.planning/log.md`, and run `handoff-snapshot`. Do not push to GitHub automatically; push only when the user asks or an explicit publish workflow is active.
+
 ## Codex role
 
 Codex is a first-class j-stack runtime with two primary operating modes:
@@ -920,7 +1030,7 @@ Claude slash commands and skills are the source names for the process. In Codex,
 | `superpowers:subagent-driven-development` | Keep implementation scoped, isolated, test-driven, and spec-bound. |
 | `/qa`, `/design-review`, `/cso` | Treat POLISH as verification, UX review, and security/risk review. |
 | `second-opinion` | Usually means Codex is the independent reviewer; produce review artifacts, not edits. |
-| `handoff-snapshot` | Write a timestamped `.planning/handoffs/` snapshot before switching tools or pausing. |
+| `handoff-snapshot` | Write a timestamped `.planning/handoffs/` blackboard snapshot before switching tools, pausing, or checkpointing significant work. |
 '
 
 PROJECT_AGENTS="${PWD}/AGENTS.md"

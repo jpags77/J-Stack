@@ -23,6 +23,10 @@ This project's source of truth lives at `.planning/`. Read `.planning/index.md` 
 
 When usage limits hit, run `handoff-snapshot` and resume in Codex / Cursor / ChatGPT / Gemini. Each has its own schema file in `.planning/`.
 
+## Work checkpoints
+
+After significant code interactions, create a durable checkpoint before switching tasks: commit the coherent git diff, update `.planning/` with notable decisions or review output, append `.planning/log.md`, and run `handoff-snapshot`. Do not push to GitHub automatically; push only when the user asks or an explicit publish workflow is active.
+
 ## Codex role
 
 Codex is a first-class j-stack runtime with two primary operating modes:
@@ -45,4 +49,4 @@ Claude slash commands and skills are the source names for the process. In Codex,
 | `superpowers:subagent-driven-development` | Keep implementation scoped, isolated, test-driven, and spec-bound. |
 | `/qa`, `/design-review`, `/cso` | Treat POLISH as verification, UX review, and security/risk review. |
 | `second-opinion` | Usually means Codex is the independent reviewer; produce review artifacts, not edits. |
-| `handoff-snapshot` | Write a timestamped `.planning/handoffs/` snapshot before switching tools or pausing. |
+| `handoff-snapshot` | Write a timestamped `.planning/handoffs/` blackboard snapshot before switching tools, pausing, or checkpointing significant work. |

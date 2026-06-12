@@ -7,7 +7,26 @@ One-line summary of every page in this wiki. Update on every page creation.
 **Iteration:** 1
 **Phase:** EXPAND
 **Fidelity target:** C — MVP (production-ready Claude Code skill stack)
-**Last updated:** 2026-05-29T12:00:00Z
+**Prior-art:** ⬜ pending
+**Last updated:** 2026-06-03T00:00:00Z
+
+## Iteration Progress
+
+Which phase steps have run in the **current** iteration. Reset all to ⬜ when the iteration bumps (session-start step 6). `[auto]` = session-start can confirm from a wiki artifact; `[confirm]` = no reliable wiki trace, so session-start asks the user and records the answer here.
+
+- [EXPAND] office-hours — ✅  `[auto: vision/]`
+- [EXPAND] plan-ceo-review — ⬜  `[confirm]`
+- [REFINE] brainstorming — ⬜  `[confirm]`
+- [SURVEY] prior-art-survey — ⬜  `[auto: Prior-art flag above — authoritative]`
+- [PLAN] writing-plans — ⬜  `[auto: plans/]`
+- [BUILD] subagent-driven-development — ⬜  `[auto: commits since plan]`
+- [POLISH] qa — ⬜  `[auto: reviews/qa-*]`
+- [POLISH] design-review — ⬜  `[auto: reviews/design-*]`
+- [POLISH] cso — ⬜  `[auto: reviews/security-*]`
+- [DEFEND] second-opinion — ⬜  `[auto: reviews/second-opinion-*]`
+- [DEFEND] stakeholder-pack — ⬜  `[auto: stakeholder-pack/]`
+- [HANDOFF] document-release — ⬜  `[confirm]`
+- [HANDOFF] handoff-snapshot — ⬜  `[auto: handoffs/]`
 
 ## Engagement Context
 
@@ -19,6 +38,7 @@ One-line summary of every page in this wiki. Update on every page creation.
 ## vision/
 - [understand-anything-integration.md](vision/understand-anything-integration.md) — design doc for wiring Lum1104/Understand-Anything into j-stack's phase pipeline
 - [codex-integration.md](vision/codex-integration.md) — implemented design for treating Codex as a first-class fallback and review runtime via AGENTS.md + .planning/
+- [handoff-blackboard.md](vision/handoff-blackboard.md) — accepted design for structured handoff snapshots with typed state, provenance, conflicts, and checkpoint policy
 
 ## prior-art/
 (empty — populate after prior-art-survey)

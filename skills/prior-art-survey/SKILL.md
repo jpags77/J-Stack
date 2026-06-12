@@ -22,6 +22,8 @@ This skill does NOT activate for:
 
 If unsure, default to running it. The cost is one parallel research pass; the cost of skipping it is reinventing maintained software or building on a deprecated package.
 
+**Runs once per project lifecycle.** The gate is satisfied the first time the survey completes (`Prior-art: ✅ complete` in `.planning/index.md`). After that, iterative work — trivial or not — proceeds straight to planning without re-running the survey; the exemptions above describe that post-initial iterative work. The survey should run once near the start of a project even if the first task looks small, so a project never reaches implementation without a single prior-art pass. The flag is never reset by later iterations.
+
 ## Why this exists
 
 LLM coding agents have two failure modes around prior art:
@@ -106,6 +108,21 @@ The synthesis document and the user's choice become inputs to writing-plans. If 
 
 If the user chose BUILD, the synthesis still feeds the plan as context — the patterns scout output in particular should inform architectural decisions.
 
+### Step 6: Mark the survey complete in the wiki
+
+Once the user has made an explicit build/adopt/fork/hybrid decision (Step 4), record completion so the PLAN phase knows the gate is satisfied. "Complete" means the survey ran **and** a decision was made — not merely that a synthesis file exists.
+
+If the project uses a `.planning/` directory:
+
+1. In `.planning/index.md`, set the flag in the `## Current State` block:
+   `**Prior-art:** ✅ complete — <DECISION> (<spec-slug>)`  (e.g., `✅ complete — HYBRID (codex-integration)`)
+2. Update the `## prior-art/` section to list the synthesis page:
+   `- [<spec-slug>.md](prior-art/<spec-slug>.md) — fit-gap survey; decision: <BUILD/ADOPT/FORK/HYBRID>`
+3. Append to `.planning/log.md`:
+   `## [<ISO timestamp>] prior-art-survey | <spec-slug> | decision: <choice>`
+
+The `Prior-art: ✅ complete` flag is the gate `superpowers:writing-plans` checks (see the governance CLAUDE.md). Until it is set, planning must not begin.
+
 ## Anti-patterns this skill prevents
 
 - **Link-dump research.** Scout reports must contain fit-gap analysis, not just URLs. The skill rejects scout output that is only links.
@@ -116,4 +133,4 @@ If the user chose BUILD, the synthesis still feeds the plan as context — the p
 
 ## Output
 
-A synthesis document at `.planning/prior-art/[spec-slug].md` (if planning directory exists) and an explicit user decision recorded in the conversation, both passed forward to writing-plans.
+A synthesis document at `.planning/prior-art/[spec-slug].md` (if planning directory exists) and an explicit user decision recorded in the conversation, both passed forward to writing-plans. Plus the `Prior-art: ✅ complete` flag set in `.planning/index.md` (Step 6), which satisfies the pre-planning gate enforced by the governance CLAUDE.md.
