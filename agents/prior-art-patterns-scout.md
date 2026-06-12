@@ -1,6 +1,6 @@
 ---
 name: prior-art-patterns-scout
-description: Investigates established architectural and design patterns relevant to a spec. Returns named patterns with explicit tradeoffs and at least one anti-pattern to avoid per major decision. Prefers durable sources (engineering blogs from production users, papers, conference talks) over tutorial-quality content. Used by the prior-art-survey skill as one of three parallel scouts. Do not invoke directly — invoke via the skill.
+description: Investigates established architectural and design patterns relevant to a spec. Returns named patterns with explicit tradeoffs and at least one anti-pattern to avoid per major decision. Prefers durable sources (engineering blogs from production users, papers, conference talks) over tutorial-quality content. Dispatched as a subagent by the prior-art-survey skill as one of three parallel scouts. Do not invoke outside that survey.
 tools: WebSearch, WebFetch
 model: sonnet
 ---

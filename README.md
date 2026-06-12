@@ -84,9 +84,9 @@ Together these aren't features — they're **a baseline of agentic coding discip
 
 ### prior-art-survey — a net new addition
 
-Neither Superpowers nor gstack ships a prior-art research agent. This is an original addition, bundled in this repo under `skills/`, and it fills a real gap: **AI agents are enthusiastic reinventors of wheels.**
+Neither Superpowers nor gstack ships a prior-art research agent. This is an original addition, bundled in this repo (the survey skill under `skills/`, the three scouts as agent definitions under `agents/`), and it fills a real gap: **AI agents are enthusiastic reinventors of wheels.**
 
-`prior-art-survey` dispatches three parallel scouts before any implementation begins:
+`prior-art-survey` dispatches three parallel scout agents — each pinned to `model: sonnet` via its agent definition, so research never silently burns Opus tokens — before any implementation begins:
 
 | Scout | What it searches | Why it matters |
 |-------|-----------------|----------------|
@@ -180,9 +180,9 @@ REFINE
 
 SURVEY
   prior-art-survey    [custom · opus]
-  ├── prior-art-oss-scout      [custom · sonnet]  ← parallel
-  ├── prior-art-library-scout  [custom · sonnet]  ← parallel
-  └── prior-art-patterns-scout [custom · sonnet]  ← parallel
+  ├── prior-art-oss-scout      [custom agent · sonnet]  ← parallel
+  ├── prior-art-library-scout  [custom agent · sonnet]  ← parallel
+  └── prior-art-patterns-scout [custom agent · sonnet]  ← parallel
 
 PLAN
   superpowers:writing-plans  [superpowers · opus]
@@ -254,7 +254,7 @@ All five are assembled by `stakeholder-pack` into a single document before the d
 
 - [Claude Code](https://claude.ai/code) installed (`which claude`)
 - [Superpowers plugin](https://github.com/obra/superpowers) installed in Claude Code
-- `prior-art-survey` + three scout skills (bundled in this repo — installed automatically by `install.sh`)
+- `prior-art-survey` + three scout agents (bundled in this repo — installed automatically by `install.sh`)
 - [OpenAI Codex CLI](https://github.com/openai/codex) installed and authenticated (for `second-opinion`)
 - git, bash, standard Unix tools
 
@@ -271,7 +271,7 @@ bash install.sh --skip-codex    # skip Codex CLI check (if not using second-opin
 bash install.sh --skip-verify   # skip post-install verification
 ```
 
-The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/` with model directives injected, installs the 5 custom skills plus the bundled `prior-art-survey` and its three scouts, writes the project `CLAUDE.md` lane configuration, creates a global `~/.claude/CLAUDE.md` that makes j-stack the session authority in every project, and merges a `SessionStart` hook into `~/.claude/settings.json` so `session-start` fires automatically (see [Manual hook setup](#manual-hook-setup) if you don't have `python3`).
+The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/` with model directives injected, installs the 5 custom skills plus the bundled `prior-art-survey`, installs its three scout agents into `~/.claude/agents/` (pinned to `model: sonnet`, honored by the Agent tool at dispatch), writes the project `CLAUDE.md` lane configuration, creates a global `~/.claude/CLAUDE.md` that makes j-stack the session authority in every project, and merges a `SessionStart` hook into `~/.claude/settings.json` so `session-start` fires automatically (see [Manual hook setup](#manual-hook-setup) if you don't have `python3`).
 
 ### Manual hook setup
 

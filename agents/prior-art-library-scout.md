@@ -1,6 +1,6 @@
 ---
 name: prior-art-library-scout
-description: Investigates libraries, SDKs, and packages that solve discrete capabilities in a spec. Verifies current maintenance status and version against package registries to catch deprecated or superseded packages. Returns structured fit-gap analysis with stale-package warnings. Used by the prior-art-survey skill as one of three parallel scouts. Do not invoke directly — invoke via the skill.
+description: Investigates libraries, SDKs, and packages that solve discrete capabilities in a spec. Verifies current maintenance status and version against package registries to catch deprecated or superseded packages. Returns structured fit-gap analysis with stale-package warnings. Dispatched as a subagent by the prior-art-survey skill as one of three parallel scouts. Do not invoke outside that survey.
 tools: WebSearch, WebFetch
 model: sonnet
 ---

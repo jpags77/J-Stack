@@ -43,7 +43,7 @@ if ! claude --help 2>/dev/null | grep -q "superpowers\|brainstorm"; then
   [[ $yn =~ ^[Yy]$ ]] || halt "Aborted. Install Superpowers first."
 fi
 
-# prior-art skills are bundled in this repo — installed in Phase 2.5 below
+# prior-art survey skill + scout agents are bundled in this repo — installed in Phase 2.5 below
 
 # ─── Phase 0.5: Codex CLI ─────────────────────────────────────────────────────
 
@@ -884,20 +884,35 @@ If the current phase has multiple sub-steps (e.g., POLISH has qa + cso + design-
 If the phase is ambiguous or the session goal implies re-entering a different phase than recorded, confirm with the user before dispatching.
 SKILL_EOF
 
-# ─── Phase 2.5: Prior-art research skills ─────────────────────────────────────
+# ─── Phase 2.5: Prior-art research skill + scout agents ───────────────────────
 
-info "Phase 2.5 — Installing prior-art research skills…"
+info "Phase 2.5 — Installing prior-art survey skill and scout agents…"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PRIOR_ART_SKILLS=(prior-art-survey prior-art-oss-scout prior-art-library-scout prior-art-patterns-scout)
+AGENTS_DIR="${HOME}/.claude/agents"
 
-for skill in "${PRIOR_ART_SKILLS[@]}"; do
-  src="${SCRIPT_DIR}/skills/${skill}"
-  if [ ! -d "$src" ]; then
-    halt "Expected skills/${skill}/ not found in repo. Clone may be incomplete."
+src="${SCRIPT_DIR}/skills/prior-art-survey"
+if [ ! -d "$src" ]; then
+  halt "Expected skills/prior-art-survey/ not found in repo. Clone may be incomplete."
+fi
+cp -r "$src" "${SKILLS_DIR}/"
+info "  Installed skill: prior-art-survey"
+
+# Scouts are agent definitions, not skills — the Agent tool honors their
+# model: sonnet frontmatter, so research runs in the sonnet lane even when
+# the orchestrating session is on opus.
+mkdir -p "$AGENTS_DIR"
+PRIOR_ART_AGENTS=(prior-art-oss-scout prior-art-library-scout prior-art-patterns-scout)
+
+for agent in "${PRIOR_ART_AGENTS[@]}"; do
+  src="${SCRIPT_DIR}/agents/${agent}.md"
+  if [ ! -f "$src" ]; then
+    halt "Expected agents/${agent}.md not found in repo. Clone may be incomplete."
   fi
-  cp -r "$src" "${SKILLS_DIR}/"
-  info "  Installed ${skill}"
+  cp "$src" "${AGENTS_DIR}/"
+  # Remove stale skill-form scout from older installs
+  rm -rf "${SKILLS_DIR:?}/${agent}"
+  info "  Installed agent: ${agent} (model: sonnet)"
 done
 
 # ─── Phase 3: CLAUDE.md configuration ────────────────────────────────────────
@@ -1100,9 +1115,17 @@ Do NOT use: /autoplan, /plan-eng-review — they conflict with superpowers:writi
 
 | Moment | Model |
 |--------|-------|
-| Judgment (scoping, security, synthesis, stakeholder) | opus |
-| Execution (implementation, audits, UI, code review) | sonnet |
+| Judgment (scoping, security audit/reasoning, synthesis, stakeholder) | opus |
+| Execution (implementation, QA/design audits, UI, code review) | sonnet |
 | Housekeeping (templating, summarizing, wiki writes) | haiku |
+
+**Subagent dispatch (BUILD and elsewhere): always pass an explicit `model` param to the
+Agent tool — never omit it, or the subagent silently inherits the opus session model.**
+Mechanical 1-2 file tasks with a complete spec → `haiku`. Implementation and integration
+→ `sonnet`. Design judgment, architecture, or review subagents → `opus`.
+
+**Fable:** never route to Fable by default — use it only when the user explicitly asks
+for it in that session.
 '
 
 mkdir -p "${HOME}/.claude"
@@ -1189,12 +1212,22 @@ if [ "$SKIP_VERIFY" = false ]; then
   all_ok=true
 
   # Check all skills exist
-  ALL_SKILLS=("${GSTACK_SKILLS[@]}" poc-wiki-init handoff-snapshot second-opinion stakeholder-pack session-start "${PRIOR_ART_SKILLS[@]}")
+  ALL_SKILLS=("${GSTACK_SKILLS[@]}" poc-wiki-init handoff-snapshot second-opinion stakeholder-pack session-start prior-art-survey)
   for skill in "${ALL_SKILLS[@]}"; do
     if [ -d "${SKILLS_DIR}/${skill}" ]; then
       info "  ✓ ${skill}"
     else
       error "  ✗ ${skill} — missing from ${SKILLS_DIR}"
+      all_ok=false
+    fi
+  done
+
+  # Check scout agent definitions exist
+  for agent in "${PRIOR_ART_AGENTS[@]}"; do
+    if [ -f "${AGENTS_DIR}/${agent}.md" ]; then
+      info "  ✓ agent: ${agent}"
+    else
+      error "  ✗ agent: ${agent} — missing from ${AGENTS_DIR}"
       all_ok=false
     fi
   done

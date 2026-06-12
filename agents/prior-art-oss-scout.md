@@ -1,6 +1,6 @@
 ---
 name: prior-art-oss-scout
-description: Investigates whole open-source projects that overlap with a given spec. Returns a structured fit-gap report naming the top 2–3 candidates with explicit assessment of what they cover, what they don't, maintenance status, and license. Used by the prior-art-survey skill as one of three parallel scouts. Do not invoke directly — invoke via the skill.
+description: Investigates whole open-source projects that overlap with a given spec. Returns a structured fit-gap report naming the top 2–3 candidates with explicit assessment of what they cover, what they don't, maintenance status, and license. Dispatched as a subagent by the prior-art-survey skill as one of three parallel scouts. Do not invoke outside that survey.
 tools: WebSearch, WebFetch
 model: sonnet
 ---

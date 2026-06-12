@@ -47,13 +47,13 @@ If any of these are missing, return to brainstorming. Do not proceed with prior-
 
 ### Step 2: Dispatch three parallel scout subagents
 
-Launch all three in parallel, each with the full spec and its specific scope:
+The scouts are agent definitions installed at `~/.claude/agents/`. Launch all three in parallel via the Agent tool — one call per scout, all in the same response block — passing the full spec and the scout's specific scope in the prompt:
 
-1. **prior-art-oss-scout** — searches for whole projects/applications that overlap with the spec
-1. **prior-art-library-scout** — searches for libraries/SDKs/packages that solve the core problem within an existing codebase, and verifies current maintenance status (catches deprecated packages)
-1. **prior-art-patterns-scout** — searches for established architectural patterns and reference implementations
+1. `subagent_type: "prior-art-oss-scout"` — searches for whole projects/applications that overlap with the spec
+1. `subagent_type: "prior-art-library-scout"` — searches for libraries/SDKs/packages that solve the core problem within an existing codebase, and verifies current maintenance status (catches deprecated packages)
+1. `subagent_type: "prior-art-patterns-scout"` — searches for established architectural patterns and reference implementations
 
-Each returns a structured fit-gap report. See the agent definitions for the exact format.
+Each agent definition pins `model: sonnet` — do not override the model upward; research scouting is sonnet-lane work. Each returns a structured fit-gap report. See the agent definitions for the exact format.
 
 ### Step 3: Synthesize findings
 
