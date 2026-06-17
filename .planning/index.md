@@ -8,7 +8,7 @@ One-line summary of every page in this wiki. Update on every page creation.
 **Phase:** EXPAND
 **Fidelity target:** C — MVP (production-ready Claude Code skill stack)
 **Prior-art:** ⬜ pending
-**Last updated:** 2026-06-03T00:00:00Z
+**Last updated:** 2026-06-17T00:00:00Z
 
 ## Iteration Progress
 
@@ -31,15 +31,16 @@ Which phase steps have run in the **current** iteration. Reset all to ⬜ when t
 
 ## Engagement Context
 
-**Goal:** Integrate Understand-Anything (https://github.com/Lum1104/Understand-Anything) into j-stack — bring its codebase knowledge-graph and comprehension capabilities into the j-stack skill pipeline.
-**Constraints:** Must fit j-stack's phase pipeline (EXPAND→REFINE→SURVEY→PLAN→BUILD→POLISH→DEFEND→HANDOFF). MIT license.
-**Done when:** Understand-Anything capabilities are wired as usable skills within j-stack with clear phase mappings.
-**Prior docs:** Understand-Anything README and plugin structure. j-stack CLAUDE.md + session-start skill.
+**Goal:** Maintain and improve j-stack as a production-ready Claude Code skill stack — keep it lean, current, and well-structured as a reusable foundation for enterprise PoC delivery.
+**Constraints:** Must remain a single-command install; no new external dependencies without clear justification; skills-as-files pattern established 2026-06-17 is now the standard.
+**Done when:** Pipeline, tooling, and documentation are coherent, tested, and ready for use on new PoC engagements.
+**Prior docs:** CLAUDE.md, AGENTS.md, .planning/ wiki, skills/ and agents/ directories.
 
 ## vision/
-- [understand-anything-integration.md](vision/understand-anything-integration.md) — design doc for wiring Lum1104/Understand-Anything into j-stack's phase pipeline
+- [understand-anything-integration.md](vision/understand-anything-integration.md) — CLOSED: Understand-Anything integration evaluated and rejected (scope mismatch)
 - [codex-integration.md](vision/codex-integration.md) — implemented design for treating Codex as a first-class fallback and review runtime via AGENTS.md + .planning/
 - [handoff-blackboard.md](vision/handoff-blackboard.md) — accepted design for structured handoff snapshots with typed state, provenance, conflicts, and checkpoint policy
+- [ponytail-integration.md](vision/ponytail-integration.md) — ponytail plugin integration: plan-gate decision, full level, audit findings, /goal and auto-research context
 
 ## prior-art/
 (empty — populate after prior-art-survey)

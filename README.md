@@ -150,7 +150,7 @@ EXPAND → REFINE → SURVEY → PLAN → BUILD → POLISH → DEFEND → HANDOF
 | **Expand** | `/office-hours`, `/plan-ceo-review` | Founder-lens reframe. Are we solving the right problem? What would a 10x founder cut? |
 | **Refine** | `brainstorm` (SP) | Structured pressure-testing of the approach. Locked before prior-art begins. |
 | **Survey** | `prior-art-survey` | Three parallel scouts: OSS, libraries, patterns. Answers "did you try X" before it's asked. |
-| **Plan** | `writing-plans` (SP) | Full implementation spec, Opus-reviewed. Nothing builds until this is locked. |
+| **Plan** | `writing-plans` (SP), `ponytail-review spec` | Full implementation spec, Opus-reviewed. Ponytail reviews the spec for YAGNI before BUILD starts — catch bloat before tokens are spent generating it. |
 | **Build** | `subagent-driven-dev` (SP), `/design-shotgun`, `/design-html` | TDD execution. Parallel subagents in isolated worktrees, implementing against the spec. |
 | **Polish** | `/qa`, `/design-review`, `/cso` | Audit against spec, design review, OWASP/STRIDE security analysis. |
 | **Defend** | `second-opinion`, `stakeholder-pack` | Codex independently reviews Claude's output. Findings synthesized. Stakeholder pack assembled. |
@@ -186,6 +186,7 @@ SURVEY
 
 PLAN
   superpowers:writing-plans  [superpowers · opus]
+  ponytail-review spec       [ponytail · full]   ← spec gate: trim YAGNI before BUILD
 
 BUILD
   superpowers:subagent-driven-development  [superpowers · sonnet]
@@ -254,9 +255,10 @@ All five are assembled by `stakeholder-pack` into a single document before the d
 
 - [Claude Code](https://claude.ai/code) installed (`which claude`)
 - [Superpowers plugin](https://github.com/obra/superpowers) installed in Claude Code
+- [Ponytail plugin](https://github.com/DietrichGebert/ponytail) installed in Claude Code (`/plugin marketplace add DietrichGebert/ponytail`)
 - `prior-art-survey` + three scout agents (bundled in this repo — installed automatically by `install.sh`)
 - [OpenAI Codex CLI](https://github.com/openai/codex) installed and authenticated (for `second-opinion`)
-- git, bash, standard Unix tools
+- git, bash, python3, standard Unix tools
 
 ### Installation
 
@@ -271,7 +273,7 @@ bash install.sh --skip-codex    # skip Codex CLI check (if not using second-opin
 bash install.sh --skip-verify   # skip post-install verification
 ```
 
-The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/` with model directives injected, installs the 5 custom skills plus the bundled `prior-art-survey`, installs its three scout agents into `~/.claude/agents/` (pinned to `model: sonnet`, honored by the Agent tool at dispatch), writes the project `CLAUDE.md` lane configuration, creates a global `~/.claude/CLAUDE.md` that makes j-stack the session authority in every project, and merges a `SessionStart` hook into `~/.claude/settings.json` so `session-start` fires automatically (see [Manual hook setup](#manual-hook-setup) if you don't have `python3`).
+The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/` with model directives injected, installs the 5 custom skills plus the bundled `prior-art-survey` (all from `skills/` files in this repo), installs the three scout agents into `~/.claude/agents/` (pinned to `model: sonnet`, honored by the Agent tool at dispatch), writes the project `CLAUDE.md` and `AGENTS.md` lane configuration, and merges a `SessionStart` hook into `~/.claude/settings.json` so `session-start` fires automatically (see [Manual hook setup](#manual-hook-setup) if you don't have `python3`).
 
 ### Manual hook setup
 
