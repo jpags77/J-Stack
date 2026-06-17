@@ -19,6 +19,7 @@ Which phase steps have run in the **current** iteration. Reset all to ⬜ when t
 - [REFINE] brainstorming — ⬜  `[confirm]`
 - [SURVEY] prior-art-survey — ⬜  `[auto: Prior-art flag above — authoritative]`
 - [PLAN] writing-plans — ⬜  `[auto: plans/]`
+- [PLAN] ponytail-review spec — ⬜  `[confirm]`
 - [BUILD] subagent-driven-development — ⬜  `[auto: commits since plan]`
 - [POLISH] qa — ⬜  `[auto: reviews/qa-*]`
 - [POLISH] design-review — ⬜  `[auto: reviews/design-*]`
@@ -44,10 +45,10 @@ Which phase steps have run in the **current** iteration. Reset all to ⬜ when t
 (empty — populate after prior-art-survey)
 
 ## plans/
-(empty — populate after writing-plans)
+- [2026-06-17-ponytail-fixes.md](plans/2026-06-17-ponytail-fixes.md) — ponytail audit fixes: skill extraction, install.sh shrink (-807 lines), vanilla HTML
 
 ## reviews/
-(empty — populate after /design-review, /cso, second-opinion)
+(empty — populate after /qa, /design-review, /cso, second-opinion)
 
 ## stakeholder-pack/
 (empty — populate after stakeholder-pack)
