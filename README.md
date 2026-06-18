@@ -256,6 +256,7 @@ All five are assembled by `stakeholder-pack` into a single document before the d
 - [Claude Code](https://claude.ai/code) installed (`which claude`)
 - [Superpowers plugin](https://github.com/obra/superpowers) installed in Claude Code
 - [Ponytail plugin](https://github.com/DietrichGebert/ponytail) installed in Claude Code (`/plugin marketplace add DietrichGebert/ponytail`)
+- [Graphify](https://github.com/safishamsi/graphify) *(optional — existing-repo engagements only)* `uv tool install graphifyy && graphify install`
 - `prior-art-survey` + three scout agents (bundled in this repo — installed automatically by `install.sh`)
 - [OpenAI Codex CLI](https://github.com/openai/codex) installed and authenticated (for `second-opinion`)
 - git, bash, python3, standard Unix tools
@@ -349,6 +350,7 @@ These were considered and explicitly rejected:
 
 | Skipped | Reason |
 |---------|--------|
+| Graphify always-on | YAGNI for greenfield PoC — on-demand only for existing-repo engagements |
 | Full gstack install | Conflicts with Superpowers, adoption tax |
 | gstack `/autoplan`, `/plan-eng-review` | Overlap Superpowers' planning lane |
 | gstack `/investigate`, `/ship`, `/canary` | Prod-shipping discipline; out of PoC scope |

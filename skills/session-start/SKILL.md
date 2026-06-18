@@ -26,6 +26,7 @@ Read these files in order:
 2. `.planning/log.md` — last 15 entries. Extract: what happened last session, any open decisions or blockers, and which phase-step skills have run since the last iteration bump.
 3. `.planning/handoffs/` — most recent file if any. Extract: next steps, continuation prompt.
 4. Artifact scan — list `.planning/prior-art/`, `.planning/plans/`, `.planning/reviews/`, `.planning/stakeholder-pack/`. The presence (or absence) of artifacts in these folders tells you which phase steps have already run. You will turn this into a phase-progress checklist in step 8.
+5. Graphify check — look for `graphify-out/GRAPH_REPORT.md` in the project root. If present, the project has a knowledge graph; note this for the orientation brief. Not required — graphify is an on-demand tool for large or unfamiliar codebases.
 
 ### 3. Detect engagement type
 
@@ -40,6 +41,8 @@ If this is the **first session on an existing repo** (wiki just created by poc-w
 2. "Are there constraints I should know about? (e.g. must not break X, specific tech stack, deadline, can't change the API)"
 3. "What does 'done' look like — how will you know this engagement was successful?"
 4. "Is there existing documentation, a spec, or prior decisions I should read first?"
+
+If the codebase is large or unfamiliar, suggest running `/graphify .` before SURVEY or PLAN — it builds a structural knowledge graph subagents can query instead of reading files individually (71× fewer tokens on large corpora). File the resulting `graphify-out/GRAPH_REPORT.md` to `.planning/vision/` so it becomes part of the wiki.
 
 Record answers in `.planning/index.md` under a `## Engagement Context` section. These answers shape how every phase runs — they are not optional.
 
@@ -145,6 +148,8 @@ Iteration : [N]
 Phase     : [current phase]
 Fidelity  : [level]
 Prior-art : [✅ complete / ⬜ pending]
+Graph     : ✅ graphify-out/ present — query with /graphify or `graphify query "..."`
+            ← omit this line entirely when graphify-out/ is absent
 Last session: [1-sentence summary or "first session"]
 This session: [session goal]
 [If scope changed]: Scope change recorded — re-entering [phase], prior plan archived as v[N].
