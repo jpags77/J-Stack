@@ -43,8 +43,12 @@ j-stack is primarily for greenfield PoC delivery — building new things fast. G
 - Large BUILD sprints where subagents are navigating a growing codebase
 
 **When to skip it:**
-- Greenfield PoC (no codebase to map)
-- Small, well-understood repos where file-by-file reading is fast
+- Empty greenfield before meaningful code exists (nothing to map yet)
+
+**Refresh cadence:**
+- Build once: end of first BUILD sprint (once scaffolding exists)
+- Refresh: at major phase transitions (PLAN→BUILD, BUILD→POLISH) when structure has shifted
+- No need to rebuild every session — graph is stable between structural changes
 
 ---
 
