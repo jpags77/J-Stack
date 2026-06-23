@@ -42,6 +42,7 @@ Which phase steps have run in the **current** iteration. Reset all to ⬜ when t
 - [handoff-blackboard.md](vision/handoff-blackboard.md) — accepted design for structured handoff snapshots with typed state, provenance, conflicts, and checkpoint policy
 - [ponytail-integration.md](vision/ponytail-integration.md) — ponytail plugin integration: plan-gate decision, full level, audit findings, /goal and auto-research context
 - [graphify-integration.md](vision/graphify-integration.md) — graphify on-demand knowledge graph: session-start detection, existing-repo use case, wiki convention
+- [headroom-integration.md](vision/headroom-integration.md) — headroom context compression: global triggers + j-stack pipeline checkpoints
 
 ## prior-art/
 (empty — populate after prior-art-survey)
