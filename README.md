@@ -122,6 +122,8 @@ Anthropic is tightening usage limits, and burning Opus credits on mechanical wor
 
 A full pipeline run spends Opus tokens where they move the needle and Haiku tokens on everything else.
 
+**Headroom** is the third defense — context compression at named pipeline checkpoints. Large tool outputs (wiki reads at session-start, prior-art scout returns, BUILD subagent transcripts, large file reads) are compressed before reasoning over them. The compressed form stays in context; the original is retrievable by hash if a specific detail is needed. Zero change to the workflow, measurable reduction in tokens-per-session.
+
 **The `.planning/` wiki is the second defense** — and the emergency bailout. This is the same concept Andrej Karpathy describes with his Obsidian second brain: a persistent, structured external memory that outlives any single session or tool. Every decision, artifact, and handoff is written to markdown files in `.planning/`. The wiki speaks every tool's native language:
 
 | File | Read by |
@@ -356,3 +358,4 @@ These were considered and explicitly rejected:
 | gstack `/investigate`, `/ship`, `/canary` | Prod-shipping discipline; out of PoC scope |
 | LiteLLM gateway | Proxy complexity not worth it for one OpenAI shell-out |
 | MCP-based memory | ~6K token tax per session; markdown wiki achieves the same goal |
+| Headroom auto-compression | Compressing every tool call adds latency with no benefit on small outputs — checkpoint discipline at named pipeline moments is sufficient |
