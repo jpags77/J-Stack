@@ -1,7 +1,5 @@
 # j-stack
 
-**[→ Visual overview](index.html)** · open in a browser or enable GitHub Pages
-
 A Claude Code configuration for agentic product development — from problem definition through a demo-ready, defensible deliverable.
 
 ---
