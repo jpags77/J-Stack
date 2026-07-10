@@ -27,4 +27,5 @@ assert_contains "${ROOT}/.planning/AGENTS.md" "EXPAND -> REFINE -> SURVEY -> PLA
 assert_contains "${ROOT}/.planning/AGENTS.md" "## Codex operating modes"
 assert_contains "${ROOT}/.planning/AGENTS.md" "## Claude skill mapping for Codex"
 
+assert_contains "${ROOT}/README.md" "GitHub integration"
 assert_contains "${ROOT}/README.md" "Codex integration modes"

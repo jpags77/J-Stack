@@ -5,10 +5,10 @@ One-line summary of every page in this wiki. Update on every page creation.
 ## Current State
 
 **Iteration:** 1
-**Phase:** EXPAND
+**Phase:** BUILD (maintenance) — this is j-stack's own repo under continuous self-improvement, not a single EXPAND→HANDOFF pass. Engagement Context below is the standing spec; the 2026-07-10 self-audit backlog (handoffs/2026-07-10T1803-snapshot.md, N1-N18) is the current unit of work.
 **Fidelity target:** C — MVP (production-ready Claude Code skill stack)
-**Prior-art:** ⬜ pending
-**Last updated:** 2026-06-17T00:00:00Z
+**Prior-art:** ⬜ pending — the original pipeline design predates prior-art-survey's existence and was never run against it; genuinely outstanding, not just stale bookkeeping.
+**Last updated:** 2026-07-10T18:30:00Z
 
 ## Iteration Progress
 
@@ -18,7 +18,7 @@ Which phase steps have run in the **current** iteration. Reset all to ⬜ when t
 - [EXPAND] plan-ceo-review — ⬜  `[confirm]`
 - [REFINE] brainstorming — ⬜  `[confirm]`
 - [SURVEY] prior-art-survey — ⬜  `[auto: Prior-art flag above — authoritative]`
-- [PLAN] writing-plans — ⬜  `[auto: plans/]`
+- [PLAN] writing-plans — ✅  `[auto: plans/2026-06-17-ponytail-fixes.md]`
 - [PLAN] ponytail-review spec — ⬜  `[confirm]`
 - [BUILD] subagent-driven-development — ⬜  `[auto: commits since plan]`
 - [POLISH] qa — ⬜  `[auto: reviews/qa-*]`
@@ -27,7 +27,7 @@ Which phase steps have run in the **current** iteration. Reset all to ⬜ when t
 - [DEFEND] second-opinion — ⬜  `[auto: reviews/second-opinion-*]`
 - [DEFEND] stakeholder-pack — ⬜  `[auto: stakeholder-pack/]`
 - [HANDOFF] document-release — ⬜  `[confirm]`
-- [HANDOFF] handoff-snapshot — ⬜  `[auto: handoffs/]`
+- [HANDOFF] handoff-snapshot — ✅  `[auto: handoffs/2026-07-10T1803-snapshot.md]`
 
 ## Engagement Context
 
@@ -57,4 +57,4 @@ Which phase steps have run in the **current** iteration. Reset all to ⬜ when t
 (empty — populate after stakeholder-pack)
 
 ## handoffs/
-(empty — populate when switching tools)
+- [2026-07-10T1803-snapshot.md](handoffs/2026-07-10T1803-snapshot.md) — self-audit findings: 10 furthering ideas + 10 redundancies/inconsistencies to prune, 18 prioritized next actions (N1-N18), none implemented yet

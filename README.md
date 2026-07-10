@@ -259,6 +259,7 @@ All five are assembled by `stakeholder-pack` into a single document before the d
 - [Graphify](https://github.com/safishamsi/graphify) *(optional — run once after first BUILD sprint, refresh at major phase transitions)* `uv tool install graphifyy && graphify install`
 - `prior-art-survey` + three scout agents (bundled in this repo — installed automatically by `install.sh`)
 - [OpenAI Codex CLI](https://github.com/openai/codex) installed and authenticated (for `second-opinion`)
+- GitHub access for the repo: a configured `origin` remote, authenticated `git` push rights, and optionally the GitHub CLI or Codex GitHub connector for PR/issue context
 - git, bash, python3, standard Unix tools
 
 ### Installation
@@ -299,6 +300,27 @@ The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/
 ```
 
 Without the hook, j-stack still works — the global `~/.claude/CLAUDE.md` instructs Claude to run `session-start` at the top of every session — but the hook makes it deterministic rather than relying on the model honoring the instruction.
+
+### GitHub integration
+
+j-stack treats GitHub as the durable collaboration surface, not the memory layer. The memory layer is still `.planning/`; GitHub holds the reviewed commits, branches, pull requests, issues, and CI signal around that work.
+
+Use this default flow:
+
+```bash
+git remote -v              # confirm origin points at the intended repo
+git status --short         # inspect local/untracked work before edits
+git checkout -b codex/...  # create a focused branch for non-trivial changes
+```
+
+After meaningful code or documentation work, checkpoint locally first:
+
+1. Commit the coherent diff.
+2. Update the relevant `.planning/` artifact and append `.planning/log.md`.
+3. Run `handoff-snapshot` if switching tools, pausing, or handing work to another runtime.
+4. Push only when the user asks or an explicit publish workflow is active.
+
+Codex should prefer the GitHub connector for repository, issue, and pull request context, and local `git`/`gh` for branch state, commits, pushes, CI logs, and current-branch PR discovery. This keeps GitHub state, local checkout state, and the `.planning/` blackboard aligned.
 
 ### Codex integration modes
 
