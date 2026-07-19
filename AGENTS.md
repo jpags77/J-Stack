@@ -29,12 +29,13 @@ After significant code interactions, create a durable checkpoint before switchin
 
 ## Codex role
 
-Codex is a first-class j-stack runtime with two primary operating modes:
+Codex is a separate j-stack runtime, not the primary Claude skill host. It uses the same `.planning/` blackboard and phase order, but executes the workflow through Codex-native repo work instead of Claude slash commands.
 
-- **Fallback mode:** Claude Code hits usage limits or the user deliberately switches tools. Resume from `.planning/index.md`, the latest `.planning/handoffs/` snapshot, and `.planning/log.md`.
+- **Direct runtime mode:** The user opens the repo in Codex to do j-stack work. Start from `AGENTS.md`, `.planning/index.md`, `.planning/log.md`, and the latest `.planning/handoffs/` snapshot, then continue the current phase directly.
+- **Fallback mode:** Claude Code hits usage limits or the user deliberately switches tools. Resume from the same `.planning/` state without requiring re-explanation.
 - **Review mode:** Claude invokes Codex for an independent `second-opinion` review. Inspect only the requested artifact unless the prompt asks for broader repo context, and return findings suitable for filing under `.planning/reviews/`.
 
-In both modes, keep `.planning/` as the durable source of truth. Notable analysis, decisions, reviews, and handoff state should be written into the appropriate `.planning/` section and logged in `.planning/log.md`.
+In every mode, keep `.planning/` as the durable source of truth. Notable analysis, decisions, reviews, and handoff state should be written into the appropriate `.planning/` section and logged in `.planning/log.md`.
 
 ## Claude skill mapping for Codex
 

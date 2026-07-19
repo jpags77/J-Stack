@@ -1,18 +1,21 @@
 #!/usr/bin/env bash
 # j-stack install script
-# Sets up the Claude Code enterprise PoC stack:
+# Sets up the j-stack enterprise PoC workflow:
 #   Superpowers + cherry-picked gstack skills + 5 custom skills + prior-art bundle
-#   + CLAUDE.md lane config + SessionStart hook
+#   + Claude CLAUDE.md lane config + Codex AGENTS.md runtime config
+#   + Claude SessionStart hook
 #
-# Usage: bash install.sh [--skip-codex] [--skip-verify]
+# Usage: bash install.sh [--codex-only] [--skip-codex] [--skip-verify] [--update]
 
 set -euo pipefail
 
 SKIP_CODEX=false
 SKIP_VERIFY=false
 UPDATE_GSTACK=false
+CODEX_ONLY=false
 for arg in "$@"; do
   case $arg in
+    --codex-only)  CODEX_ONLY=true ;;
     --skip-codex)  SKIP_CODEX=true ;;
     --skip-verify) SKIP_VERIFY=true ;;
     --update)      UPDATE_GSTACK=true ;;
@@ -26,24 +29,30 @@ error() { echo -e "${RED}[error]${NC} $*" >&2; }
 halt()  { error "$*"; exit 1; }
 
 SKILLS_DIR="${HOME}/.claude/skills"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ─── Phase 0: Prerequisites ───────────────────────────────────────────────────
 
 info "Checking prerequisites…"
 
-command -v claude &>/dev/null || halt "claude not found. Install Claude Code first: https://claude.ai/code"
 command -v git    &>/dev/null || halt "git not found."
 command -v bash   &>/dev/null || halt "bash not found."
 
-# Check Superpowers plugin — claude --help doesn't enumerate installed
-# plugins, so check the plugin cache directory directly instead.
-if ! find "${HOME}/.claude/plugins" -maxdepth 2 -iname "*superpowers*" 2>/dev/null | grep -q .; then
-  warn "Superpowers plugin not detected under ~/.claude/plugins/."
-  warn "Install it inside Claude Code with:"
-  warn "  /plugin marketplace add obra/superpowers-marketplace"
-  warn "  /plugin install superpowers@superpowers-marketplace"
-  read -rp "Continue anyway? [y/N] " yn
-  [[ $yn =~ ^[Yy]$ ]] || halt "Aborted. Install Superpowers first."
+if [ "$CODEX_ONLY" = false ]; then
+  command -v claude &>/dev/null || halt "claude not found. Install Claude Code first: https://claude.ai/code"
+
+  # Check Superpowers plugin — claude --help doesn't enumerate installed
+  # plugins, so check the plugin cache directory directly instead.
+  if ! find "${HOME}/.claude/plugins" -maxdepth 2 -iname "*superpowers*" 2>/dev/null | grep -q .; then
+    warn "Superpowers plugin not detected under ~/.claude/plugins/."
+    warn "Install it inside Claude Code with:"
+    warn "  /plugin marketplace add obra/superpowers-marketplace"
+    warn "  /plugin install superpowers@superpowers-marketplace"
+    read -rp "Continue anyway? [y/N] " yn
+    [[ $yn =~ ^[Yy]$ ]] || halt "Aborted. Install Superpowers first."
+  fi
+else
+  info "Codex-only mode: skipping Claude CLI, plugin, skill, agent, and hook installation."
 fi
 
 # prior-art survey skill + scout agents are bundled in this repo — installed in Phase 2.5 below
@@ -64,6 +73,8 @@ if [ "$SKIP_CODEX" = false ]; then
     [[ $yn =~ ^[Yy]$ ]] || halt "Aborted. Install Codex CLI, then re-run install.sh."
   fi
 fi
+
+if [ "$CODEX_ONLY" = false ]; then
 
 # ─── Phase 1: Cherry-pick gstack skills ───────────────────────────────────────
 
@@ -163,8 +174,6 @@ done
 # ─── Phase 2: Custom skills ────────────────────────────────────────────────────────────────────────────
 
 info "Phase 2 — Installing custom skills…"
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CUSTOM_SKILLS=(poc-wiki-init handoff-snapshot second-opinion stakeholder-pack session-start)
 
 for skill in "${CUSTOM_SKILLS[@]}"; do
@@ -227,6 +236,8 @@ else
   info "  Created CLAUDE.md with stack ownership section"
 fi
 
+fi
+
 # ─── Phase 3.25: AGENTS.md configuration ──────────────────────────────────────
 
 info "Phase 3.25 — Configuring project AGENTS.md…"
@@ -256,6 +267,8 @@ else
   printf '# Project Context\n\n%s\n' "$AGENTS_SECTION" > "$PROJECT_AGENTS"
   info "  Created AGENTS.md with Codex lane configuration"
 fi
+
+if [ "$CODEX_ONLY" = false ]; then
 
 # ─── Phase 3.6: SessionStart hook ─────────────────────────────────────────────
 
@@ -320,6 +333,8 @@ else
   warn "  Add the SessionStart hook manually — see README 'Manual hook setup'."
 fi
 
+fi
+
 # ─── Phase 4: Verification ────────────────────────────────────────────────────
 
 if [ "$SKIP_VERIFY" = false ]; then
@@ -327,33 +342,47 @@ if [ "$SKIP_VERIFY" = false ]; then
 
   all_ok=true
 
-  # Check all skills exist
-  ALL_SKILLS=("${GSTACK_SKILLS[@]}" poc-wiki-init handoff-snapshot second-opinion stakeholder-pack session-start prior-art-survey)
-  for skill in "${ALL_SKILLS[@]}"; do
-    if [ -d "${SKILLS_DIR}/${skill}" ]; then
-      info "  ✓ ${skill}"
-    else
-      error "  ✗ ${skill} — missing from ${SKILLS_DIR}"
-      all_ok=false
-    fi
-  done
+  if grep -q "Codex role" "$PROJECT_AGENTS" 2>/dev/null; then
+    info "  ✓ AGENTS.md Codex runtime config"
+  else
+    error "  ✗ AGENTS.md missing Codex runtime config"
+    all_ok=false
+  fi
 
-  # Check scout agent definitions exist
-  for agent in "${PRIOR_ART_AGENTS[@]}"; do
-    if [ -f "${AGENTS_DIR}/${agent}.md" ]; then
-      info "  ✓ agent: ${agent}"
-    else
-      error "  ✗ agent: ${agent} — missing from ${AGENTS_DIR}"
-      all_ok=false
-    fi
-  done
+  if [ "$CODEX_ONLY" = false ]; then
+    # Check all skills exist
+    ALL_SKILLS=("${GSTACK_SKILLS[@]}" poc-wiki-init handoff-snapshot second-opinion stakeholder-pack session-start prior-art-survey)
+    for skill in "${ALL_SKILLS[@]}"; do
+      if [ -d "${SKILLS_DIR}/${skill}" ]; then
+        info "  ✓ ${skill}"
+      else
+        error "  ✗ ${skill} — missing from ${SKILLS_DIR}"
+        all_ok=false
+      fi
+    done
+
+    # Check scout agent definitions exist
+    for agent in "${PRIOR_ART_AGENTS[@]}"; do
+      if [ -f "${AGENTS_DIR}/${agent}.md" ]; then
+        info "  ✓ agent: ${agent}"
+      else
+        error "  ✗ agent: ${agent} — missing from ${AGENTS_DIR}"
+        all_ok=false
+      fi
+    done
+  fi
 
   # Check codex if not skipped
   if [ "$SKIP_CODEX" = false ]; then
     if command -v codex &>/dev/null; then
       info "  ✓ codex CLI"
     else
-      warn "  ✗ codex CLI not found — second-opinion skill will not work until installed"
+      if [ "$CODEX_ONLY" = true ]; then
+        error "  ✗ codex CLI not found"
+        all_ok=false
+      else
+        warn "  ✗ codex CLI not found — second-opinion skill will not work until installed"
+      fi
     fi
   fi
 
@@ -371,11 +400,19 @@ echo -e "${GREEN} j-stack installation complete!${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 echo "Next steps:"
-echo "  1. Open a new Claude Code session in your project directory"
-echo "  2. session-start fires automatically (SessionStart hook) — it orients,"
-echo "     or bootstraps the .planning/ wiki on first run for this project"
-echo "  3. It dispatches to /office-hours to begin EXPAND (founder-lens scoping)"
-echo "  4. Follow the pipeline in ~/.claude/CLAUDE.md"
+if [ "$CODEX_ONLY" = true ]; then
+  echo "  1. Open Codex in your project directory"
+  echo "  2. Codex reads AGENTS.md plus .planning/index.md, .planning/log.md,"
+  echo "     and the latest .planning/handoffs/ snapshot"
+  echo "  3. Continue the current phase directly using the Codex behavior mapping"
+  echo "  4. Keep .planning/ and local commits as the durable handoff surface"
+else
+  echo "  1. Open a new Claude Code session in your project directory"
+  echo "  2. session-start fires automatically (SessionStart hook) — it orients,"
+  echo "     or bootstraps the .planning/ wiki on first run for this project"
+  echo "  3. It dispatches to /office-hours to begin EXPAND (founder-lens scoping)"
+  echo "  4. Follow the pipeline in ~/.claude/CLAUDE.md"
+fi
 echo ""
 echo "Each session: session-start → confirm fidelity → confirm phase → do work → handoff-snapshot (if switching tools)"
 echo "Pipeline:     EXPAND → REFINE → SURVEY → PLAN → BUILD → POLISH → DEFEND → HANDOFF"

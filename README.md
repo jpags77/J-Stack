@@ -1,6 +1,6 @@
 # j-stack
 
-A Claude Code configuration for agentic product development — from problem definition through a demo-ready, defensible deliverable.
+A Claude Code skill stack with a separate Codex runtime for agentic product development — from problem definition through a demo-ready, defensible deliverable.
 
 ---
 
@@ -255,12 +255,18 @@ All five are assembled by `stakeholder-pack` into a single document before the d
 
 ### Prerequisites
 
+**Claude runtime:**
+
 - [Claude Code](https://claude.ai/code) installed (`which claude`)
 - [Superpowers plugin](https://github.com/obra/superpowers) installed in Claude Code
 - [Ponytail plugin](https://github.com/DietrichGebert/ponytail) installed in Claude Code (`/plugin marketplace add DietrichGebert/ponytail`)
 - [Graphify](https://github.com/safishamsi/graphify) *(optional — run once after first BUILD sprint, refresh at major phase transitions)* `uv tool install graphifyy && graphify install`
 - `prior-art-survey` + three scout agents (bundled in this repo — installed automatically by `install.sh`)
+
+**Codex runtime:**
+
 - [OpenAI Codex CLI](https://github.com/openai/codex) installed and authenticated (for `second-opinion`)
+- `AGENTS.md` in the target repo with the j-stack Codex runtime mapping (installed by `bash install.sh --codex-only`, or by the default installer)
 - GitHub access for the repo: a configured `origin` remote, authenticated `git` push rights, and optionally the GitHub CLI or Codex GitHub connector for PR/issue context
 - git, bash, python3, standard Unix tools
 
@@ -273,11 +279,14 @@ bash install.sh
 ```
 
 ```bash
+bash install.sh --codex-only    # only configure the Codex runtime (AGENTS.md + Codex check)
 bash install.sh --skip-codex    # skip Codex CLI check (if not using second-opinion)
 bash install.sh --skip-verify   # skip post-install verification
 ```
 
-The script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/` with model directives injected, installs the 5 custom skills plus the bundled `prior-art-survey` (all from `skills/` files in this repo), installs the three scout agents into `~/.claude/agents/` (pinned to `model: sonnet`, honored by the Agent tool at dispatch), writes the project `CLAUDE.md` and `AGENTS.md` lane configuration, and merges a `SessionStart` hook into `~/.claude/settings.json` so `session-start` fires automatically (see [Manual hook setup](#manual-hook-setup) if you don't have `python3`).
+The default script clones gstack, copies 11 cherry-picked skills into `~/.claude/skills/` with model directives injected, installs the 5 custom skills plus the bundled `prior-art-survey` (all from `skills/` files in this repo), installs the three scout agents into `~/.claude/agents/` (pinned to `model: sonnet`, honored by the Agent tool at dispatch), writes the project `CLAUDE.md` and `AGENTS.md` lane configuration, and merges a `SessionStart` hook into `~/.claude/settings.json` so `session-start` fires automatically (see [Manual hook setup](#manual-hook-setup) if you don't have `python3`).
+
+`--codex-only` skips Claude CLI/plugin/skill/agent/hook installation. It checks for the Codex CLI, writes the project `AGENTS.md` runtime mapping, and verifies the Codex surface. Use it when the repo should be workable from Codex without installing the Claude skill host on that machine.
 
 ### Manual hook setup
 
@@ -324,14 +333,23 @@ After meaningful code or documentation work, checkpoint locally first:
 
 Codex should prefer the GitHub connector for repository, issue, and pull request context, and local `git`/`gh` for branch state, commits, pushes, CI logs, and current-branch PR discovery. This keeps GitHub state, local checkout state, and the `.planning/` blackboard aligned.
 
-### Codex integration modes
+### Codex runtime
 
-j-stack treats Codex as a first-class cross-tool runtime through `AGENTS.md` and the `.planning/` wiki:
+j-stack treats Codex as a separate runtime through `AGENTS.md` and the `.planning/` wiki. Claude remains the primary skill host for Claude slash commands and plugin execution; Codex runs the same process directly from repo instructions and durable planning state.
 
-- **Fallback mode:** when Claude usage limits hit, open the repo in Codex. Codex reads `AGENTS.md`, `.planning/index.md`, `.planning/log.md`, and the latest `.planning/handoffs/` snapshot, then resumes the current phase.
+- **Direct runtime mode:** open the repo in Codex intentionally. Codex reads `AGENTS.md`, `.planning/index.md`, `.planning/log.md`, and the latest `.planning/handoffs/` snapshot, then continues the current phase.
+- **Fallback mode:** when Claude usage limits hit, open the repo in Codex and resume from the same `.planning/` state.
 - **Review mode:** `second-opinion` uses Codex as the independent reviewer for a spec, diff, or architecture decision. Codex should return review-ready findings that can be filed under `.planning/reviews/`.
 
 Codex does not need to run Claude slash commands directly. `AGENTS.md` maps those commands to equivalent Codex behavior while preserving the same phase order and wiki write-back rules.
+
+To configure only this runtime in a repo:
+
+```bash
+bash install.sh --codex-only
+```
+
+Then start Codex in the repo. There is no Claude-style `SessionStart` hook for Codex in this stack today; the bootstrap contract is explicit: read `AGENTS.md`, then `.planning/index.md`, `.planning/log.md`, and the latest `.planning/handoffs/` snapshot before non-trivial work.
 
 ### Starting a new PoC or improving an existing repo
 

@@ -1,7 +1,8 @@
 # Design: Codex as a First-Class j-stack Runtime
 
 Date: 2026-05-29
-Status: implemented
+Updated: 2026-07-19
+Status: implemented; expanded to separate runtime
 
 ## Problem
 
@@ -9,17 +10,19 @@ j-stack already mentioned Codex as a handoff target and independent reviewer, bu
 
 ## Decision
 
-Treat Codex as a first-class runtime through `AGENTS.md` and `.planning/AGENTS.md`, while keeping `.planning/` as the shared state layer. Codex should not emulate Claude slash commands directly. Instead, the Codex instruction files map each Claude skill surface to equivalent Codex behavior.
+Treat Codex as a separate runtime through `AGENTS.md` and `.planning/AGENTS.md`, while keeping `.planning/` as the shared state layer. Claude remains the primary skill host for Claude slash commands and plugin execution. Codex should not emulate those slash commands directly; it follows the same lane semantics through Codex-native repo work.
 
 ## Operating modes
 
-- **Fallback mode:** Claude usage limits hit or the user switches tools. Codex reads `AGENTS.md`, `.planning/index.md`, `.planning/log.md`, and the latest handoff snapshot, then continues the current phase.
+- **Direct runtime mode:** The user opens the repo in Codex intentionally. Codex reads `AGENTS.md`, `.planning/index.md`, `.planning/log.md`, and the latest handoff snapshot, then continues the current phase directly.
+- **Fallback mode:** Claude usage limits hit or the user switches tools. Codex resumes from the same `.planning/` state.
 - **Review mode:** Claude invokes Codex for `second-opinion`. Codex inspects the requested artifact independently and returns review-ready findings for `.planning/reviews/`.
 
 ## Implementation
 
 - `install.sh` now generates or updates root `AGENTS.md` with Codex lane configuration.
+- `install.sh --codex-only` configures the Codex runtime without requiring Claude Code, Superpowers, gstack skills, Claude agents, or the Claude SessionStart hook.
 - `poc-wiki-init` now emits a richer `.planning/AGENTS.md` template for Codex.
-- Root `AGENTS.md` and `.planning/AGENTS.md` now include Codex operating modes and a Claude-skill-to-Codex-behavior mapping.
-- README documents the two Codex integration modes.
+- Root `AGENTS.md` and `.planning/AGENTS.md` now include Codex runtime modes and a Claude-skill-to-Codex-behavior mapping.
+- README documents the Codex runtime and its install path.
 - `tests/codex-config.sh` verifies the installer, root instructions, planning schema, and README stay aligned.

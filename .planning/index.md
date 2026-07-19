@@ -8,7 +8,7 @@ One-line summary of every page in this wiki. Update on every page creation.
 **Phase:** BUILD (maintenance) — this is j-stack's own repo under continuous self-improvement, not a single EXPAND→HANDOFF pass. Engagement Context below is the standing spec; the 2026-07-10 self-audit backlog (handoffs/2026-07-10T1803-snapshot.md, N1-N18) is the current unit of work.
 **Fidelity target:** C — MVP (production-ready Claude Code skill stack)
 **Prior-art:** ⬜ pending — the original pipeline design predates prior-art-survey's existence and was never run against it; genuinely outstanding, not just stale bookkeeping.
-**Last updated:** 2026-07-19T17:07:42Z
+**Last updated:** 2026-07-19T17:15:12Z
 
 ## Iteration Progress
 
@@ -59,3 +59,4 @@ Which phase steps have run in the **current** iteration. Reset all to ⬜ when t
 ## handoffs/
 - [2026-07-10T1803-snapshot.md](handoffs/2026-07-10T1803-snapshot.md) — self-audit findings: 10 furthering ideas + 10 redundancies/inconsistencies to prune, 18 prioritized next actions (N1-N18), none implemented yet
 - [2026-07-19T1707-codex-checkpoint.md](handoffs/2026-07-19T1707-codex-checkpoint.md) — Codex sync checkpoint: latest WIP verified, stale Codex config test fixed, cached gstack pin enforcement tightened, tests passing
+- [2026-07-19T1715-codex-runtime.md](handoffs/2026-07-19T1715-codex-runtime.md) — Codex runtime split: `install.sh --codex-only`, separate-runtime docs/templates/tests, local Codex/Superpowers presence confirmed
