@@ -1,13 +1,3 @@
-# Project Context for Claude Code
-
-This project uses a markdown wiki at .planning/ as its single source of truth.
-
-## Before any non-trivial work
-
-1. Read .planning/index.md to understand existing state.
-2. Read .planning/log.md to see recent activity.
-3. Check .planning/handoffs/ for the most recent snapshot if one exists — another tool may have left state for you.
-
 ## Stack ownership (skill lane management)
 
 Multiple skill packs are installed. Each owns a specific phase of the workflow:
@@ -38,14 +28,3 @@ When usage limits hit, run `handoff-snapshot` and resume in Codex / Cursor / Cha
 ## Work checkpoints
 
 After significant code interactions, create a durable checkpoint before switching tasks: commit the coherent git diff, update `.planning/` with notable decisions or review output, append `.planning/log.md`, and run `handoff-snapshot`. Do not push to GitHub automatically; push only when the user asks or an explicit publish workflow is active.
-
-## Context compression (headroom)
-
-Compress before reasoning at these specific pipeline moments:
-
-- **session-start:** compress `index.md`, `log.md`, and any handoff file before orientation
-- **prior-art-survey:** compress each scout's output before synthesizing across all three
-- **BUILD subagent returns:** compress subagent transcripts before bringing into the parent context
-- **Large file reads during SURVEY/BUILD:** any file over ~150 lines read for orientation only
-
-Use `mcp__headroom__headroom_compress`; retrieve by hash if you need a specific detail later.

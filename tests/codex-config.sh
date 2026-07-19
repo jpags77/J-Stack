@@ -24,7 +24,7 @@ assert_contains "${ROOT}/AGENTS.md" "Review mode"
 assert_contains "${ROOT}/AGENTS.md" "## Claude skill mapping for Codex"
 
 assert_contains "${ROOT}/.planning/AGENTS.md" "EXPAND -> REFINE -> SURVEY -> PLAN -> BUILD -> POLISH -> DEFEND -> HANDOFF"
-assert_contains "${ROOT}/.planning/AGENTS.md" "## Codex operating modes"
+assert_contains "${ROOT}/.planning/AGENTS.md" "## Codex role"
 assert_contains "${ROOT}/.planning/AGENTS.md" "## Claude skill mapping for Codex"
 
 assert_contains "${ROOT}/README.md" "GitHub integration"

@@ -98,7 +98,7 @@ Append-only. Format: ## [YYYY-MM-DD HH:MM] <operation> | <subject>
 ## [<current ISO timestamp>] init | wiki bootstrapped
 ```
 
-**CLAUDE.md** — schema for Claude Code:
+**CLAUDE.md** — schema for Claude Code. Read `templates/lane-doctrine.md` (co-located next to this SKILL.md — the same file install.sh injects into a project's root CLAUDE.md/AGENTS.md) and use its content verbatim as the `## Stack ownership` / `## Wiki` / `## Cross-tool` / `## Work checkpoints` sections, rather than retyping them. Do not paraphrase or shorten it — a second copy is exactly the drift this convention exists to avoid. Full file:
 
 ```markdown
 # Project Context for Claude Code
@@ -111,31 +111,10 @@ This project uses a markdown wiki at .planning/ as its single source of truth.
 2. Read .planning/log.md to see recent activity.
 3. Check .planning/handoffs/ for the most recent snapshot if one exists — another tool may have left state for you.
 
-## Stack ownership (avoid skill conflicts)
-
-- Superpowers + prior-art-survey owns: brainstorming, planning, building (think → plan → build).
-- gstack contributes: front-end scoping (/office-hours, /plan-ceo-review), fidelity polish (/qa, /design-*, /cso), handoff docs (/document-release).
-- Custom skills contribute: prior-art-survey, second-opinion, stakeholder-pack, poc-wiki-init, handoff-snapshot.
-
-## Wiki maintenance
-
-When you produce notable output (a decision, a comparison, an analysis), file it back into the wiki as a new page and update index.md. The wiki compounds rather than just accumulates.
-
-When approaching context limits or about to switch tools, run handoff-snapshot.
-
-## Work checkpoints
-
-After significant code interactions, create a durable checkpoint before switching tasks:
-
-1. Commit the coherent git diff locally.
-2. Update `.planning/` with notable decisions, review output, or changed state.
-3. Append `.planning/log.md`.
-4. Run `handoff-snapshot`.
-
-Do not push to GitHub automatically. Push only when the user asks or an explicit publish workflow is active.
+[insert templates/lane-doctrine.md verbatim here]
 ```
 
-**AGENTS.md** — schema for Codex CLI:
+**AGENTS.md** — schema for Codex CLI. Read both `templates/lane-doctrine.md` and `templates/codex-role.md` (co-located next to this SKILL.md) and insert them verbatim in that order. Full file:
 
 ```markdown
 # Project Context for Codex CLI
@@ -154,40 +133,9 @@ EXPAND -> REFINE -> SURVEY -> PLAN -> BUILD -> POLISH -> DEFEND -> HANDOFF
 
 Respect the lane ownership from the root AGENTS.md/CLAUDE.md files. Do not skip ahead to implementation when the wiki says the project is still in an earlier phase.
 
-## Codex operating modes
+[insert templates/lane-doctrine.md verbatim here]
 
-You are likely being invoked because of one of these reasons:
-
-- **Fallback mode:** Claude usage limits were hit, or the user deliberately switched tools. Resume from the latest wiki state and continue the current phase.
-- **Review mode:** Claude invoked Codex for cross-vendor `second-opinion` review. Inspect the requested artifact independently and produce findings suitable for `.planning/reviews/`.
-
-In either case, your output should be filed into .planning/ as a new page and logged in log.md.
-
-## Work checkpoints
-
-After significant code interactions, create a durable checkpoint before switching tasks:
-
-1. Commit the coherent git diff locally.
-2. Update `.planning/` with notable decisions, review output, or changed state.
-3. Append `.planning/log.md`.
-4. Run `handoff-snapshot`.
-
-Do not push to GitHub automatically. Push only when the user asks or an explicit publish workflow is active.
-
-## Claude skill mapping for Codex
-
-Claude slash commands and skills are process labels. In Codex, map them to equivalent behavior:
-
-| Claude surface | Codex behavior |
-| --- | --- |
-| `/office-hours`, `/plan-ceo-review` | Challenge problem framing, scope, and MVP shape in EXPAND. |
-| `superpowers:brainstorming` | Refine requirements and compare approaches before planning. |
-| `prior-art-survey` | Use the bundled prior-art skill files and current research to make a build/adopt/fork/hybrid recommendation. |
-| `superpowers:writing-plans` | Create or follow the implementation plan before editing code. |
-| `superpowers:subagent-driven-development` | Execute the plan in small, test-driven, isolated changes. |
-| `/qa`, `/design-review`, `/cso` | Verify behavior, UX, and security/risk posture in POLISH. |
-| `second-opinion` | Act as the independent reviewer and write review-ready findings. |
-| `handoff-snapshot` | Write `.planning/handoffs/<timestamp>-snapshot.md` as a structured blackboard before pausing, switching tools, or checkpointing significant work. |
+[insert templates/codex-role.md verbatim here]
 ```
 
 **.cursor/rules** — schema for Cursor:

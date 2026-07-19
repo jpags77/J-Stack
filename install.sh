@@ -10,10 +10,12 @@ set -euo pipefail
 
 SKIP_CODEX=false
 SKIP_VERIFY=false
+UPDATE_GSTACK=false
 for arg in "$@"; do
   case $arg in
     --skip-codex)  SKIP_CODEX=true ;;
     --skip-verify) SKIP_VERIFY=true ;;
+    --update)      UPDATE_GSTACK=true ;;
   esac
 done
 
@@ -33,9 +35,10 @@ command -v claude &>/dev/null || halt "claude not found. Install Claude Code fir
 command -v git    &>/dev/null || halt "git not found."
 command -v bash   &>/dev/null || halt "bash not found."
 
-# Check Superpowers plugin
-if ! claude --help 2>/dev/null | grep -q "superpowers\|brainstorm"; then
-  warn "Superpowers plugin not detected in 'claude --help' output."
+# Check Superpowers plugin — claude --help doesn't enumerate installed
+# plugins, so check the plugin cache directory directly instead.
+if ! find "${HOME}/.claude/plugins" -maxdepth 2 -iname "*superpowers*" 2>/dev/null | grep -q .; then
+  warn "Superpowers plugin not detected under ~/.claude/plugins/."
   warn "Install it inside Claude Code with:"
   warn "  /plugin marketplace add obra/superpowers-marketplace"
   warn "  /plugin install superpowers@superpowers-marketplace"
@@ -67,13 +70,31 @@ fi
 info "Phase 1 — Cherry-picking gstack skills…"
 
 GSTACK_SCRATCH="/tmp/gstack-source"
+# Pinned to a known-good commit (gstack v1.60.1.0, 2026-07-10) so upstream
+# changes can't silently break the skill-folder list below. To pick up
+# newer gstack releases: run install.sh --update, verify the result, then
+# bump this SHA in a commit of its own.
+GSTACK_PIN="7c9df1c568a9ea745508f679a329332b2c338063"
+
+if [ "$UPDATE_GSTACK" = true ]; then
+  rm -rf "$GSTACK_SCRATCH"
+fi
 
 if [ -d "$GSTACK_SCRATCH" ]; then
-  info "Updating existing gstack clone at ${GSTACK_SCRATCH}…"
-  git -C "$GSTACK_SCRATCH" pull --ff-only 2>/dev/null || true
+  info "Reusing existing gstack clone at ${GSTACK_SCRATCH}…"
 else
-  info "Cloning gstack to ${GSTACK_SCRATCH}…"
-  git clone --depth 1 https://github.com/garrytan/gstack.git "$GSTACK_SCRATCH"
+  info "Cloning gstack (pinned ${GSTACK_PIN:0:12})…"
+  git clone --quiet https://github.com/garrytan/gstack.git "$GSTACK_SCRATCH"
+fi
+
+if ! git -C "$GSTACK_SCRATCH" checkout --quiet "$GSTACK_PIN"; then
+  halt "gstack pin ${GSTACK_PIN} not found in ${GSTACK_SCRATCH}. Run install.sh --update, then update GSTACK_PIN if needed."
+fi
+info "Using gstack pin ${GSTACK_PIN:0:12}."
+
+if [ "$UPDATE_GSTACK" = true ]; then
+  latest="$(git -C "$GSTACK_SCRATCH" rev-parse origin/HEAD 2>/dev/null || git -C "$GSTACK_SCRATCH" rev-parse origin/main)"
+  warn "install.sh --update fetched gstack, but GSTACK_PIN is still ${GSTACK_PIN:0:12}. Latest is ${latest:0:12} — review the diff, then update GSTACK_PIN by hand and commit."
 fi
 
 GSTACK_SKILLS=(cso office-hours plan-ceo-review qa design-shotgun design-html design-review codex document-release freeze guard)
@@ -189,45 +210,20 @@ done
 
 info "Phase 3 — Configuring project CLAUDE.md…"
 
-CLAUDE_SECTION='
-## Stack ownership (skill lane management)
-
-Multiple skill packs are installed. Each owns a specific phase of the workflow:
-
-- **Front-end scoping (Expand phase):** /office-hours, /plan-ceo-review (gstack)
-- **Refining (Refine phase):** Superpowers brainstorming
-- **Prior art (Survey phase):** prior-art-survey (custom)
-- **Planning (Plan phase):** Superpowers writing-plans
-- **Building (Build phase):** Superpowers subagent-driven-development, with /design-shotgun + /design-html for UI work
-- **Polishing (Polish phase):** /qa, /design-review, /cso (gstack)
-- **Defending (Defend phase):** second-opinion, stakeholder-pack (custom)
-- **Handoff:** /document-release (gstack), handoff-snapshot (custom)
-
-Run them in order. Do NOT use gstack'"'"'s /autoplan or /plan-eng-review — they overlap Superpowers'"'"' planning lane and create conflicts.
-
-## Wiki
-
-This project'"'"'s source of truth lives at `.planning/`. Read `.planning/index.md` before any non-trivial work. Check `.planning/handoffs/` for the most recent snapshot — another tool may have left state for you to resume from.
-
-## Cross-tool
-
-When usage limits hit, run `handoff-snapshot` and resume in Codex / Cursor / ChatGPT / Gemini. Each has its own schema file in `.planning/`.
-
-## Work checkpoints
-
-After significant code interactions, create a durable checkpoint before switching tasks: commit the coherent git diff, update `.planning/` with notable decisions or review output, append `.planning/log.md`, and run `handoff-snapshot`. Do not push to GitHub automatically; push only when the user asks or an explicit publish workflow is active.
-'
+# Sourced from templates/lane-doctrine.md — the single copy of this text.
+# Edit that file, not this script, to change the shared doctrine.
+CLAUDE_SECTION="$(cat "${SCRIPT_DIR}/templates/lane-doctrine.md")"
 
 PROJECT_CLAUDE="${PWD}/CLAUDE.md"
 if [ -f "$PROJECT_CLAUDE" ]; then
   if grep -q "Stack ownership" "$PROJECT_CLAUDE"; then
     info "  CLAUDE.md already contains stack ownership section — skipping"
   else
-    printf '\n# Project Context\n%s' "$CLAUDE_SECTION" >> "$PROJECT_CLAUDE"
+    printf '\n# Project Context\n\n%s\n' "$CLAUDE_SECTION" >> "$PROJECT_CLAUDE"
     info "  Appended stack ownership section to existing CLAUDE.md"
   fi
 else
-  printf '# Project Context\n%s' "$CLAUDE_SECTION" > "$PROJECT_CLAUDE"
+  printf '# Project Context\n\n%s\n' "$CLAUDE_SECTION" > "$PROJECT_CLAUDE"
   info "  Created CLAUDE.md with stack ownership section"
 fi
 
@@ -235,102 +231,29 @@ fi
 
 info "Phase 3.25 — Configuring project AGENTS.md…"
 
-AGENTS_SECTION='
-## Stack ownership (skill lane management)
+# Both composed from templates/ — the single copies of this text. Edit
+# those files, not this script, to change the shared doctrine or the
+# Codex-specific addendum.
+LANE_DOCTRINE="$(cat "${SCRIPT_DIR}/templates/lane-doctrine.md")"
+CODEX_ROLE="$(cat "${SCRIPT_DIR}/templates/codex-role.md")"
+AGENTS_SECTION="${LANE_DOCTRINE}
 
-Multiple skill packs are installed. Each owns a specific phase of the workflow:
-
-- **Front-end scoping (Expand phase):** /office-hours, /plan-ceo-review (gstack)
-- **Refining (Refine phase):** Superpowers brainstorming
-- **Prior art (Survey phase):** prior-art-survey (custom)
-- **Planning (Plan phase):** Superpowers writing-plans
-- **Building (Build phase):** Superpowers subagent-driven-development, with /design-shotgun + /design-html for UI work
-- **Polishing (Polish phase):** /qa, /design-review, /cso (gstack)
-- **Defending (Defend phase):** second-opinion, stakeholder-pack (custom)
-- **Handoff:** /document-release (gstack), handoff-snapshot (custom)
-
-Run them in order. Do NOT use gstack'"'"'s /autoplan or /plan-eng-review — they overlap Superpowers'"'"' planning lane and create conflicts.
-
-## Wiki
-
-This project'"'"'s source of truth lives at `.planning/`. Read `.planning/index.md` before any non-trivial work. Check `.planning/handoffs/` for the most recent snapshot — another tool may have left state for you to resume from.
-
-## Cross-tool
-
-When usage limits hit, run `handoff-snapshot` and resume in Codex / Cursor / ChatGPT / Gemini. Each has its own schema file in `.planning/`.
-
-## Work checkpoints
-
-After significant code interactions, create a durable checkpoint before switching tasks: commit the coherent git diff, update `.planning/` with notable decisions or review output, append `.planning/log.md`, and run `handoff-snapshot`. Do not push to GitHub automatically; push only when the user asks or an explicit publish workflow is active.
-
-## Codex role
-
-Codex is a first-class j-stack runtime with two primary operating modes:
-
-- **Fallback mode:** Claude Code hits usage limits or the user deliberately switches tools. Resume from `.planning/index.md`, the latest `.planning/handoffs/` snapshot, and `.planning/log.md`.
-- **Review mode:** Claude invokes Codex for an independent `second-opinion` review. Inspect only the requested artifact unless the prompt asks for broader repo context, and return findings suitable for filing under `.planning/reviews/`.
-
-In both modes, keep `.planning/` as the durable source of truth. Notable analysis, decisions, reviews, and handoff state should be written into the appropriate `.planning/` section and logged in `.planning/log.md`.
-
-## Claude skill mapping for Codex
-
-Claude slash commands and skills are the source names for the process. In Codex, follow the same lane semantics even when the command itself is not available:
-
-| Claude surface | Codex behavior |
-| --- | --- |
-| `/office-hours`, `/plan-ceo-review` | Run EXPAND as a problem/scope challenge before design work. |
-| `superpowers:brainstorming` | Refine requirements and approaches before planning or code edits. |
-| `prior-art-survey` | Use the bundled prior-art skill files and web/package research where available. |
-| `superpowers:writing-plans` | Produce or follow a locked implementation plan before BUILD work. |
-| `superpowers:subagent-driven-development` | Keep implementation scoped, isolated, test-driven, and spec-bound. |
-| `/qa`, `/design-review`, `/cso` | Treat POLISH as verification, UX review, and security/risk review. |
-| `second-opinion` | Usually means Codex is the independent reviewer; produce review artifacts, not edits. |
-| `handoff-snapshot` | Write a timestamped `.planning/handoffs/` blackboard snapshot before switching tools, pausing, or checkpointing significant work. |
-'
-
-AGENTS_CODEX_APPEND='
-## Work checkpoints
-
-After significant code interactions, create a durable checkpoint before switching tasks: commit the coherent git diff, update `.planning/` with notable decisions or review output, append `.planning/log.md`, and run `handoff-snapshot`. Do not push to GitHub automatically; push only when the user asks or an explicit publish workflow is active.
-
-## Codex role
-
-Codex is a first-class j-stack runtime with two primary operating modes:
-
-- **Fallback mode:** Claude Code hits usage limits or the user deliberately switches tools. Resume from `.planning/index.md`, the latest `.planning/handoffs/` snapshot, and `.planning/log.md`.
-- **Review mode:** Claude invokes Codex for an independent `second-opinion` review. Inspect only the requested artifact unless the prompt asks for broader repo context, and return findings suitable for filing under `.planning/reviews/`.
-
-In both modes, keep `.planning/` as the durable source of truth. Notable analysis, decisions, reviews, and handoff state should be written into the appropriate `.planning/` section and logged in `.planning/log.md`.
-
-## Claude skill mapping for Codex
-
-Claude slash commands and skills are the source names for the process. In Codex, follow the same lane semantics even when the command itself is not available:
-
-| Claude surface | Codex behavior |
-| --- | --- |
-| `/office-hours`, `/plan-ceo-review` | Run EXPAND as a problem/scope challenge before design work. |
-| `superpowers:brainstorming` | Refine requirements and approaches before planning or code edits. |
-| `prior-art-survey` | Use the bundled prior-art skill files and web/package research where available. |
-| `superpowers:writing-plans` | Produce or follow a locked implementation plan before BUILD work. |
-| `superpowers:subagent-driven-development` | Keep implementation scoped, isolated, test-driven, and spec-bound. |
-| `/qa`, `/design-review`, `/cso` | Treat POLISH as verification, UX review, and security/risk review. |
-| `second-opinion` | Usually means Codex is the independent reviewer; produce review artifacts, not edits. |
-| `handoff-snapshot` | Write a timestamped `.planning/handoffs/` blackboard snapshot before switching tools, pausing, or checkpointing significant work. |
-'
+${CODEX_ROLE}"
+AGENTS_CODEX_APPEND="$CODEX_ROLE"
 
 PROJECT_AGENTS="${PWD}/AGENTS.md"
 if [ -f "$PROJECT_AGENTS" ]; then
   if grep -q "Codex role" "$PROJECT_AGENTS"; then
     info "  AGENTS.md already contains Codex lane configuration — skipping"
   elif grep -q "Stack ownership" "$PROJECT_AGENTS"; then
-    printf '\n%s' "$AGENTS_CODEX_APPEND" >> "$PROJECT_AGENTS"
+    printf '\n%s\n' "$AGENTS_CODEX_APPEND" >> "$PROJECT_AGENTS"
     info "  Appended Codex lane configuration to existing AGENTS.md"
   else
-    printf '\n# Project Context\n%s' "$AGENTS_SECTION" >> "$PROJECT_AGENTS"
+    printf '\n# Project Context\n\n%s\n' "$AGENTS_SECTION" >> "$PROJECT_AGENTS"
     info "  Appended j-stack section to existing AGENTS.md"
   fi
 else
-  printf '# Project Context\n%s' "$AGENTS_SECTION" > "$PROJECT_AGENTS"
+  printf '# Project Context\n\n%s\n' "$AGENTS_SECTION" > "$PROJECT_AGENTS"
   info "  Created AGENTS.md with Codex lane configuration"
 fi
 

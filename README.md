@@ -73,8 +73,10 @@ Together these aren't features — they're **a baseline of agentic coding discip
 
 | Skill | What it does | Why this one |
 |-------|-------------|--------------|
-| `/freeze` | Locks specific files from editing. | Protects finalized artifacts (specs, stakeholder docs) from being modified mid-session. |
-| `/guard` | Combines `/freeze` with careful mode. | Adds a second layer when you need Claude to treat certain files as read-only under any circumstances. |
+| `/freeze` | Locks specific files from editing. | Use alone when you just need finalized artifacts (specs, stakeholder docs) protected from mid-session edits, without changing anything else about how Claude works. |
+| `/guard` | `/freeze` plus careful mode. | Use when file-locking alone isn't enough — e.g. protecting a live production config, where you also want the extra caution careful mode adds. |
+
+Not redundant: `/guard` is a strict superset, but its careful-mode overhead isn't warranted for the common case of "don't touch this file" — that's `/freeze` alone.
 
 **What was skipped and why:** `/autoplan` and `/plan-eng-review` overlap Superpowers' planning lane — two planners create conflicts. `/ship`, `/canary`, `/investigate`, and `/land-and-deploy` are prod-shipping tools; PoC mission doesn't need them. `/retro`, `/pair-agent`, and `gbrain` solve problems outside the PoC scope entirely.
 
@@ -110,17 +112,15 @@ The output isn't just research — it becomes the "what else did you consider" s
 
 ### Token optimization and the second brain
 
-Anthropic is tightening usage limits, and burning Opus credits on mechanical work is a real cost. j-stack addresses this at two levels.
+Anthropic is tightening usage limits, and burning Opus credits on mechanical work is a real cost. j-stack addresses this at three levels.
 
-**Model routing by cognitive demand** is the first defense. Every skill carries an explicit model directive injected at install time:
+**Model routing by cognitive demand** is the first defense. The 11 cherry-picked gstack skills get an explicit model directive injected at install time; custom and bundled skills ship with their own `model:` frontmatter already set (prior-art-survey routes per-scout instead, via pinned-model Agent dispatch — see [Model routing](#model-routing) below):
 
 - **Opus** — judgment calls: scoping, security reasoning, cross-model synthesis, stakeholder framing
 - **Sonnet** — execution: implementation, audits, UI conversion, code review
 - **Haiku** — mechanical operations: templating, summarizing, file locking
 
 A full pipeline run spends Opus tokens where they move the needle and Haiku tokens on everything else.
-
-**Headroom** is the third defense — context compression at named pipeline checkpoints. Large tool outputs (wiki reads at session-start, prior-art scout returns, BUILD subagent transcripts, large file reads) are compressed before reasoning over them. The compressed form stays in context; the original is retrievable by hash if a specific detail is needed. Zero change to the workflow, measurable reduction in tokens-per-session.
 
 **The `.planning/` wiki is the second defense** — and the emergency bailout. This is the same concept Andrej Karpathy describes with his Obsidian second brain: a persistent, structured external memory that outlives any single session or tool. Every decision, artifact, and handoff is written to markdown files in `.planning/`. The wiki speaks every tool's native language:
 
@@ -134,6 +134,8 @@ A full pipeline run spends Opus tokens where they move the needle and Haiku toke
 When Anthropic limits hit mid-engagement — and they will — `handoff-snapshot` writes a structured blackboard to `.planning/handoffs/`. It keeps the human continuation prompt, but also records machine-readable state: current phase, repo status, claims with provenance, confidence, open questions, conflicts between sources, and ordered next actions. Paste the continuation prompt into Codex, Cursor, or ChatGPT and the session resumes from the blackboard instead of reconstructing context from chat memory.
 
 After significant code interactions, j-stack also treats commit + wiki update + handoff as the durable checkpoint. Local commits are appropriate once the diff is coherent; GitHub pushes are intentionally explicit and should happen only when the user asks or when a publish workflow is active.
+
+**Headroom** is the third defense — context compression at named pipeline checkpoints. Large tool outputs (wiki reads at session-start, prior-art scout returns, BUILD subagent transcripts, large file reads) are compressed before reasoning over them. The compressed form stays in context; the original is retrievable by hash if a specific detail is needed. Zero change to the workflow, measurable reduction in tokens-per-session.
 
 ---
 
