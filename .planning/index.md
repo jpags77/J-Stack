@@ -7,8 +7,8 @@ One-line summary of every page in this wiki. Update on every page creation.
 **Iteration:** 1
 **Phase:** BUILD (maintenance) — this is j-stack's own repo under continuous self-improvement, not a single EXPAND→HANDOFF pass. Engagement Context below is the standing spec; the 2026-07-10 self-audit backlog (handoffs/2026-07-10T1803-snapshot.md, N1-N18) is the current unit of work.
 **Fidelity target:** C — MVP (production-ready Claude Code skill stack)
-**Prior-art:** ⬜ pending — the original pipeline design predates prior-art-survey's existence and was never run against it; genuinely outstanding, not just stale bookkeeping.
-**Last updated:** 2026-07-19T17:15:12Z
+**Prior-art:** ⬜ pending — the original pipeline design predates prior-art-survey's existence and was never run against it; genuinely outstanding, not just stale bookkeeping. (A single-source comparison against coleam00/skills was run 2026-08-15 and is filed under prior-art/, but it is not a full survey and does not satisfy the gate.)
+**Last updated:** 2026-08-15
 
 ## Iteration Progress
 
@@ -45,7 +45,7 @@ Which phase steps have run in the **current** iteration. Reset all to ⬜ when t
 - [headroom-integration.md](vision/headroom-integration.md) — headroom context compression: global triggers + j-stack pipeline checkpoints
 
 ## prior-art/
-(empty — populate after prior-art-survey)
+- [2026-08-15-coleam00-skills.md](prior-art/2026-08-15-coleam00-skills.md) — coleam00/skills comparison: adopt the meta-layer (second-brain-audit doctrine → N7, execution-report/evolution-review pair → N6, rules-check-drift, hooks-create), reject the PIV loop as a lane collision; 6 new backlog items N19-N24, questions Q3/Q4. Single-source — does NOT satisfy the prior-art gate.
 
 ## plans/
 - [2026-06-17-ponytail-fixes.md](plans/2026-06-17-ponytail-fixes.md) — ponytail audit fixes: skill extraction, install.sh shrink (-807 lines), vanilla HTML
